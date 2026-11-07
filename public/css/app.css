@@ -312,7 +312,30 @@ input[readonly] { opacity: .65; }
 
 .toggle { display: flex; align-items: center; gap: 12px; color: var(--text); font-size: 18px; min-height: var(--tap); }
 .toggle input { width: 26px; height: 26px; accent-color: var(--accent); }
-.settings-info { color: var(--muted); font-size: 14px; margin-top: 12px; }
+.settings-info { color: var(--muted); font-size: 14px; margin-top: 4px; }
+
+/* Settings: sections in boxes, title bar stays at the top while scrolling */
+.sheet.settings { padding-top: 0; }
+.sheet-head {
+  position: sticky; top: 0; z-index: 2; display: flex; align-items: center; justify-content: space-between;
+  margin: 0 -16px; padding: 14px 16px 10px; background: var(--panel); border-bottom: 1px solid var(--line);
+}
+.sheet-head h2 { margin: 0; }
+.icon-close {
+  width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--line); background: var(--panel-2);
+  color: var(--text); font-size: 18px; font-weight: 800;
+}
+.set-section {
+  margin-top: 14px; padding: 12px 14px 14px; border: 1px solid var(--line); border-radius: var(--radius);
+  background: var(--bg);
+}
+.set-title {
+  margin: 0 0 6px; font-size: 13px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: var(--muted);
+}
+.set-section .set-label { margin-top: 8px; }
+.set-section .btn-wide { margin-top: 8px; }
+.set-section .toggle { min-height: 46px; }
+.set-section .hint { margin: 2px 0 0; }
 
 .toast {
   position: fixed; left: 50%; top: 50dvh; transform: translateX(-50%); z-index: 20;

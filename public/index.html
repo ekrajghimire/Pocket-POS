@@ -23,7 +23,7 @@
   <!-- ============ LOGIN SCREEN ============ -->
   <main id="login" class="login" hidden>
     <form id="loginForm" class="login-card" autocomplete="on">
-      <div class="logo">▮▯▮▮▯▮ <span>Pocket POS by Manish G.</span></div>
+      <div class="logo">▮▯▮▮▯▮ <span>Pocket POS</span></div>
       <label for="password">Password</label>
       <input id="password" name="password" type="password" autocomplete="current-password" required enterkeyhint="go">
       <button class="btn btn-primary btn-xl" type="submit">Log in</button>
@@ -176,32 +176,63 @@
   </form>
 
   <!-- Settings -->
-  <div id="settingsSheet" class="sheet" hidden>
-    <h2>Settings</h2>
-    <label>Theme</label>
-    <div class="segmented compact" id="themePick">
-      <button type="button" data-mode="auto">Auto</button>
-      <button type="button" data-mode="light">☀︎ Light</button>
-      <button type="button" data-mode="dark">☾ Dark</button>
+  <div id="settingsSheet" class="sheet settings" hidden>
+    <div class="sheet-head">
+      <h2>Settings</h2>
+      <button class="icon-close" type="button" data-close aria-label="Close settings">✕</button>
     </div>
-    <label>Colour</label>
-    <div class="segmented compact" id="accentPick">
-      <button type="button" data-accent="green"><span class="swatch green"></span> Green</button>
-      <button type="button" data-accent="blue"><span class="swatch blue"></span> Blue</button>
-    </div>
-    <label class="toggle"><input type="checkbox" id="camOn"> Use camera to scan</label>
-    <p class="hint">Turn off on a PC with a USB/Bluetooth scanner. Hardware scanners work either way.</p>
-    <label class="toggle"><input type="checkbox" id="gstOn"> Show 10% GST</label>
-    <label class="toggle"><input type="checkbox" id="gstIncl"> Prices include GST</label>
-    <div class="settings-info" id="productInfo"></div>
-    <button class="btn btn-wide" type="button" id="editProductModeBtn">✎ Edit a product</button>
-    <button class="btn btn-wide" type="button" id="refreshBtn">↻ Refresh products from sheet</button>
-    <button class="btn btn-wide" type="button" id="syncNowBtn">⇅ Sync now</button>
-    <button class="btn btn-wide" type="button" id="restartCamBtn">📷 Restart camera</button>
-    <button class="btn btn-wide" type="button" id="receiptSetBtn">🧾 Receipt settings</button>
-    <button class="btn btn-wide" type="button" id="custDisplayBtn">🖥 Open customer display</button>
-    <button class="btn btn-wide" type="button" id="reprintBtn">🖨 Reprint last receipt</button>
-    <button class="btn btn-wide btn-danger" type="button" id="logoutBtn">Log out</button>
+
+    <!-- 1. Appearance -->
+    <section class="set-section">
+      <h3 class="set-title">🎨 Appearance</h3>
+      <label class="set-label">Theme</label>
+      <div class="segmented compact" id="themePick">
+        <button type="button" data-mode="auto">Auto</button>
+        <button type="button" data-mode="light">☀︎ Light</button>
+        <button type="button" data-mode="dark">☾ Dark</button>
+      </div>
+      <label class="set-label">Colour</label>
+      <div class="segmented compact" id="accentPick">
+        <button type="button" data-accent="green"><span class="swatch green"></span> Green</button>
+        <button type="button" data-accent="blue"><span class="swatch blue"></span> Blue</button>
+      </div>
+    </section>
+
+    <!-- 2. Scanning -->
+    <section class="set-section">
+      <h3 class="set-title">📷 Scanning</h3>
+      <label class="toggle"><input type="checkbox" id="camOn"> Use camera to scan</label>
+      <p class="hint">Turn off on a PC with a USB/Bluetooth scanner. Hardware scanners work either way.</p>
+      <button class="btn btn-wide" type="button" id="restartCamBtn">📷 Restart camera</button>
+    </section>
+
+    <!-- 3. Receipts & drawer -->
+    <section class="set-section">
+      <h3 class="set-title">🧾 Receipts &amp; drawer</h3>
+      <button class="btn btn-wide" type="button" id="receiptSetBtn">🧾 Receipt &amp; cash drawer settings</button>
+      <button class="btn btn-wide" type="button" id="reprintBtn">🖨 Reprint last receipt</button>
+      <button class="btn btn-wide" type="button" id="custDisplayBtn">🖥 Open customer display</button>
+    </section>
+
+    <!-- 4. Products & sync -->
+    <section class="set-section">
+      <h3 class="set-title">📦 Products &amp; sync</h3>
+      <div class="settings-info" id="productInfo"></div>
+      <div class="settings-info" id="syncInfo"></div>
+      <button class="btn btn-wide" type="button" id="editProductModeBtn">✎ Edit a product</button>
+      <button class="btn btn-wide" type="button" id="refreshBtn">↻ Refresh products from sheet</button>
+      <button class="btn btn-wide" type="button" id="syncNowBtn">⇅ Sync now</button>
+      <label class="toggle"><input type="checkbox" id="gstOn"> Show 10% GST</label>
+      <label class="toggle"><input type="checkbox" id="gstIncl"> Prices include GST</label>
+    </section>
+
+    <!-- 5. Account -->
+    <section class="set-section">
+      <h3 class="set-title">👤 Account</h3>
+      <p class="hint">You stay logged in on this device for 30 days.</p>
+      <button class="btn btn-wide btn-danger" type="button" id="logoutBtn">Log out</button>
+    </section>
+
     <div class="sheet-actions"><button class="btn btn-primary btn-xl" type="button" data-close>Close</button></div>
     <p class="credit">Pocket POS · Developed by Manish Ghimire</p>
   </div>

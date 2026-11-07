@@ -813,12 +813,17 @@ $('logoutBtn').addEventListener('click', async () => {
 });
 
 function updateProductInfo(n) {
-  $('productInfo').textContent = `${n.toLocaleString('en-AU')} products on this phone · decoder: ${scanner ? scanner.engine : '—'}`
+  $('productInfo').textContent = `${n.toLocaleString('en-AU')} products on this device · decoder: ${scanner ? scanner.engine : '—'}`
     + (demoMode ? ' · DEMO MODE' : '');
 }
 
 // ---- Sync indicator ---------------------------------------------------------------------------
 onSyncChange((s) => {
+  // Settings > Products & sync status line
+  $('syncInfo').textContent = s.status === 'synced' ? '✓ Everything is saved to the Google Sheet'
+    : s.status === 'offline' ? `Offline · ${s.pending} change${s.pending === 1 ? '' : 's'} waiting to sync`
+    : s.status === 'error' ? `${s.pending} waiting · retrying${s.lastError ? ' (' + s.lastError + ')' : ''}`
+    : `${s.pending} change${s.pending === 1 ? '' : 's'} syncing…`;
   const badge = $('syncBadge');
   badge.className = 'badge ' + (s.status === 'synced' ? '' : s.status === 'offline' ? 'offline' : s.status === 'error' ? 'error' : 'pending');
   $('syncText').textContent =
