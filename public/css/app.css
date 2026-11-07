@@ -31,6 +31,7 @@ input { -webkit-user-select: text; user-select: text; }
 .center { text-align: center; }
 .error { color: var(--danger); min-height: 1.2em; margin: 6px 0 0; font-weight: 600; }
 .hint { color: var(--muted); font-size: 15px; }
+.credit { text-align: center; color: var(--muted); font-size: 13px; margin: 22px 0 0; opacity: .8; }
 
 /* ---------- Buttons & inputs ---------- */
 .btn {

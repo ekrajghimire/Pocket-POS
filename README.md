@@ -1,5 +1,7 @@
 # Pocket POS
 
+**Developed by Manish Ghimire**
+
 A phone-first point-of-sale web app (installable PWA) built around fast, continuous barcode
 scanning, with Google Sheets as the database. Plain JavaScript with no frontend framework and
 no build step for the app code. It deploys to Vercel.
