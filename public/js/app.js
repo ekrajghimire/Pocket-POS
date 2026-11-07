@@ -861,14 +861,23 @@ onSyncChange((s) => {
     : s.status === 'offline' ? `Offline · ${s.pending} change${s.pending === 1 ? '' : 's'} waiting to sync`
     : s.status === 'error' ? `${s.pending} waiting · retrying${s.lastError ? ' (' + s.lastError + ')' : ''}`
     : `${s.pending} change${s.pending === 1 ? '' : 's'} syncing…`;
+  renderBadge(s);
+});
+
+// Home screen badge (top-left): Online / Offline. It follows the real connection, so it says
+// Offline as soon as Wi-Fi drops, even when nothing is waiting to sync.
+function renderBadge(s) {
+  const offline = !navigator.onLine || s.status === 'offline';
   const badge = $('syncBadge');
-  badge.className = 'badge ' + (s.status === 'synced' ? '' : s.status === 'offline' ? 'offline' : s.status === 'error' ? 'error' : 'pending');
+  badge.className = 'badge ' + (offline ? 'offline' : s.status === 'synced' ? '' : s.status === 'error' ? 'error' : 'pending');
   $('syncText').textContent =
-    s.status === 'synced' ? 'Synced'
-    : s.status === 'offline' ? `Offline · ${s.pending} pending`
+    offline ? (s.pending ? `Offline · ${s.pending} pending` : 'Offline')
+    : s.status === 'synced' ? 'Online'
     : s.status === 'error' ? `${s.pending} pending · retrying`
     : `${s.pending} pending`;
-});
+}
+window.addEventListener('online', () => renderBadge(syncState));
+window.addEventListener('offline', () => renderBadge(syncState));
 
 // =============================================================================================
 // Helpers
