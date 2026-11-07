@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+  <meta charset="utf-8">
+  <!-- viewport-fit=cover lets the app use the full screen behind the notch -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <title>Pocket POS</title>
+  <meta name="theme-color" content="#000000">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <!-- iOS home-screen support -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Pocket POS">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <link rel="icon" href="/icons/icon-192.png">
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+
+  <!-- ============ LOGIN SCREEN ============ -->
+  <main id="login" class="login" hidden>
+    <form id="loginForm" class="login-card" autocomplete="on">
+      <div class="logo">▮▯▮▮▯▮ <span>Pocket POS</span></div>
+      <label for="password">Password</label>
+      <input id="password" name="password" type="password" autocomplete="current-password" required enterkeyhint="go">
+      <button class="btn btn-primary btn-xl" type="submit">Log in</button>
+      <p id="loginError" class="error" role="alert"></p>
+      <p id="demoHint" class="hint" hidden>Demo mode: no PASSWORD_HASH set, password is <b>demo</b>.</p>
+    </form>
+  </main>
+
+  <!-- ============ MAIN APP ============ -->
+  <div id="app" class="app" hidden>
+
+    <!-- Top half: live camera -->
+    <section id="scanner" class="scanner">
+      <video id="video" playsinline muted autoplay></video>
+
+      <!-- Darkened mask with a clear "region of interest" window. Only this area is decoded. -->
+      <div class="roi-mask"><div id="roi" class="roi"><i></i><i></i><i></i><i></i><div class="laser"></div></div></div>
+
+      <div id="focusRing" class="focus-ring" hidden></div>
+
+      <!-- Top bar over the camera -->
+      <div class="scanner-top">
+        <button id="syncBadge" class="badge" type="button" aria-label="Sync status"><span class="dot"></span><span id="syncText">…</span></button>
+        <div class="spacer"></div>
+        <button id="torchBtn" class="icon-btn" type="button" aria-label="Flashlight" hidden>🔦</button>
+        <button id="manualBtn" class="icon-btn" type="button" aria-label="Type a barcode">⌨︎</button>
+        <button id="menuBtn" class="icon-btn" type="button" aria-label="Settings">☰</button>
+      </div>
+
+      <!-- Manual barcode entry (fallback) -->
+      <form id="manualForm" class="manual-bar" hidden>
+        <input id="manualInput" inputmode="numeric" autocomplete="off" placeholder="Type barcode" enterkeyhint="done">
+        <button class="btn btn-primary" type="submit">Add</button>
+      </form>
+
+      <!-- Flash shown after each successful scan -->
+      <div id="flash" class="flash" hidden><div id="flashName"></div><div id="flashPrice"></div></div>
+
+      <!-- Camera status / errors -->
+      <div id="camMsg" class="cam-msg" hidden></div>
+    </section>
+
+    <!-- Bottom half: live cart -->
+    <section class="cart">
+      <div class="cart-head">
+        <span id="cartCount">0 items</span>
+        <div class="spacer"></div>
+        <button id="manualItemBtn" class="chip" type="button">+ Item</button>
+        <button id="clearBtn" class="chip chip-danger" type="button">Clear</button>
+      </div>
+      <ul id="cartList" class="cart-list"></ul>
+      <div id="cartEmpty" class="cart-empty">Scan a barcode to start a sale</div>
+      <div class="cart-foot">
+        <div class="total-block">
+          <div id="gstLine" class="gst-line"></div>
+          <div id="cartTotal" class="total">$0.00</div>
+        </div>
+        <button id="checkoutBtn" class="btn btn-primary btn-xl" type="button" disabled>Checkout</button>
+      </div>
+    </section>
+  </div>
+
+  <!-- ============ BOTTOM SHEETS ============ -->
+  <div id="sheetBackdrop" class="backdrop" hidden></div>
+
+  <!-- New product (barcode not found) -->
+  <form id="newProductSheet" class="sheet" hidden autocomplete="off">
+    <h2>New product</h2>
+    <label>Barcode <input id="npBarcode" inputmode="numeric" required></label>
+    <label>Name <input id="npName" required enterkeyhint="next" autocapitalize="words"></label>
+    <label>Price (AUD) <input id="npPrice" inputmode="decimal" required placeholder="0.00" enterkeyhint="done"></label>
+    <div class="row2">
+      <label>Cost <input id="npCost" inputmode="decimal" placeholder="optional"></label>
+      <label>Stock <input id="npStock" inputmode="numeric" placeholder="optional"></label>
+    </div>
+    <label>Category <input id="npCategory" list="categoryList" placeholder="optional"></label>
+    <datalist id="categoryList"></datalist>
+    <p id="npError" class="error"></p>
+    <div class="sheet-actions">
+      <button class="btn" type="button" data-close>Cancel</button>
+      <button class="btn btn-primary btn-xl" type="submit">Save &amp; Add to Cart</button>
+    </div>
+  </form>
+
+  <!-- Edit a cart line -->
+  <form id="editSheet" class="sheet" hidden autocomplete="off">
+    <h2 id="editName">Item</h2>
+    <div class="qty-row">
+      <button class="btn qty-btn" type="button" id="editMinus">−</button>
+      <input id="editQty" inputmode="numeric" class="qty-input">
+      <button class="btn qty-btn" type="button" id="editPlus">+</button>
+    </div>
+    <label>Price for this sale <input id="editPrice" inputmode="decimal"></label>
+    <div class="sheet-actions">
+      <button class="btn btn-danger" type="button" id="editRemove">Remove</button>
+      <button class="btn btn-primary btn-xl" type="submit">Done</button>
+    </div>
+  </form>
+
+  <!-- Manual item without barcode -->
+  <form id="manualItemSheet" class="sheet" hidden autocomplete="off">
+    <h2>Manual item</h2>
+    <label>Description <input id="miName" placeholder="Item" enterkeyhint="next"></label>
+    <label>Price (AUD) <input id="miPrice" inputmode="decimal" required placeholder="0.00"></label>
+    <p id="miError" class="error"></p>
+    <div class="sheet-actions">
+      <button class="btn" type="button" data-close>Cancel</button>
+      <button class="btn btn-primary btn-xl" type="submit">Add to cart</button>
+    </div>
+  </form>
+
+  <!-- Checkout -->
+  <form id="checkoutSheet" class="sheet" hidden autocomplete="off">
+    <h2>Checkout</h2>
+    <div id="coTotal" class="total total-center">$0.00</div>
+    <div id="coGst" class="gst-line center"></div>
+    <div class="segmented" id="payType">
+      <button type="button" data-pay="Cash" class="on">Cash</button>
+      <button type="button" data-pay="Card">Card</button>
+      <button type="button" data-pay="Other">Other</button>
+    </div>
+    <div id="cashBox">
+      <div id="cashDue" class="hint center"></div>
+      <label>Cash received <input id="cashIn" inputmode="decimal" placeholder="optional"></label>
+      <div class="quick-cash" id="quickCash"></div>
+      <div id="changeOut" class="change"></div>
+    </div>
+    <div class="sheet-actions">
+      <button class="btn" type="button" data-close>Back</button>
+      <button class="btn btn-primary btn-xl" type="submit">Complete sale</button>
+    </div>
+  </form>
+
+  <!-- Settings -->
+  <div id="settingsSheet" class="sheet" hidden>
+    <h2>Settings</h2>
+    <label class="toggle"><input type="checkbox" id="gstOn"> Show 10% GST</label>
+    <label class="toggle"><input type="checkbox" id="gstIncl"> Prices include GST</label>
+    <div class="settings-info" id="productInfo"></div>
+    <button class="btn btn-wide" type="button" id="refreshBtn">↻ Refresh products from sheet</button>
+    <button class="btn btn-wide" type="button" id="syncNowBtn">⇅ Sync now</button>
+    <button class="btn btn-wide" type="button" id="restartCamBtn">📷 Restart camera</button>
+    <button class="btn btn-wide btn-danger" type="button" id="logoutBtn">Log out</button>
+    <div class="sheet-actions"><button class="btn btn-primary btn-xl" type="button" data-close>Close</button></div>
+  </div>
+
+  <!-- Small toast for general messages -->
+  <div id="toast" class="toast" hidden></div>
+
+  <script type="module" src="/js/app.js"></script>
+</body>
+</html>

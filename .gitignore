@@ -1,0 +1,9 @@
+node_modules/
+.env
+.env.local
+.env*.local
+.data/
+public/vendor/
+.vercel/
+.DS_Store
+*-service-account*.json

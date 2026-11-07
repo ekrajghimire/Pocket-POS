@@ -1,0 +1,6 @@
+# Never upload local secrets or test data to Vercel
+.env
+.env.*
+!.env.example
+.data
+*service-account*.json
