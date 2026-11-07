@@ -156,6 +156,7 @@
       <div class="quick-cash" id="quickCash"></div>
       <div id="changeOut" class="change"></div>
     </div>
+    <label class="toggle"><input type="checkbox" id="printOn"> 🧾 Print receipt</label>
     <div class="sheet-actions">
       <button class="btn" type="button" data-close>Back</button>
       <button class="btn btn-primary btn-xl" type="submit">Complete sale</button>
@@ -173,9 +174,39 @@
     <button class="btn btn-wide" type="button" id="refreshBtn">↻ Refresh products from sheet</button>
     <button class="btn btn-wide" type="button" id="syncNowBtn">⇅ Sync now</button>
     <button class="btn btn-wide" type="button" id="restartCamBtn">📷 Restart camera</button>
+    <button class="btn btn-wide" type="button" id="receiptSetBtn">🧾 Receipt settings</button>
+    <button class="btn btn-wide" type="button" id="reprintBtn">🖨 Reprint last receipt</button>
     <button class="btn btn-wide btn-danger" type="button" id="logoutBtn">Log out</button>
     <div class="sheet-actions"><button class="btn btn-primary btn-xl" type="button" data-close>Close</button></div>
   </div>
+
+  <!-- Receipt settings (saved on this device) -->
+  <form id="receiptSheet" class="sheet" hidden autocomplete="off">
+    <h2>Receipt settings</h2>
+    <label>Shop name <input id="rsName" autocapitalize="words"></label>
+    <label>Address <input id="rsAddress" placeholder="optional"></label>
+    <div class="row2">
+      <label>ABN <input id="rsAbn" inputmode="numeric" placeholder="optional"></label>
+      <label>Phone <input id="rsPhone" inputmode="tel" placeholder="optional"></label>
+    </div>
+    <label>Message at the bottom <input id="rsFooter" placeholder="Thank you!"></label>
+    <label>Paper
+      <select id="rsPaper" class="select">
+        <option value="80">80 mm receipt printer</option>
+        <option value="58">58 mm receipt printer</option>
+        <option value="a4">A4 / normal printer</option>
+      </select>
+    </label>
+    <p class="hint">With an ABN and GST turned on, receipts print as a TAX INVOICE.</p>
+    <button class="btn btn-wide" type="button" id="testPrintBtn">Print test receipt</button>
+    <div class="sheet-actions">
+      <button class="btn" type="button" data-close>Cancel</button>
+      <button class="btn btn-primary btn-xl" type="submit">Save</button>
+    </div>
+  </form>
+
+  <!-- The printable receipt (invisible on screen, the only thing shown when printing) -->
+  <div id="receipt" class="receipt" aria-hidden="true"></div>
 
   <!-- Small toast for general messages -->
   <div id="toast" class="toast" hidden></div>

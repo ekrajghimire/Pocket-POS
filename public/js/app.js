@@ -1,6 +1,7 @@
 // app.js — wires everything together: login, scanner -> cart, bottom sheets, checkout, settings.
 
 import { Scanner } from './scanner.js';
+import { receiptSettings, saveReceiptSettings, printReceipt, rememberLastSale, lastSale, sampleSale } from './receipt.js';
 import { unlockAudio, beepOk, beepUnknown, beepSale } from './feedback.js';
 import {
   cart, settings, saveSettings, addProduct, addManual, updateLine, removeLine, clearCart,
@@ -383,7 +384,7 @@ $('clearBtn').addEventListener('click', () => {
 // =============================================================================================
 // Bottom sheets
 // =============================================================================================
-const SHEETS = ['newProductSheet', 'editSheet', 'manualItemSheet', 'checkoutSheet', 'settingsSheet'];
+const SHEETS = ['newProductSheet', 'editSheet', 'manualItemSheet', 'checkoutSheet', 'settingsSheet', 'receiptSheet'];
 const anySheetOpen = () => SHEETS.some((id) => !$(id).hidden);
 
 function openSheet(id) {
@@ -497,6 +498,7 @@ $('checkoutBtn').addEventListener('click', () => {
   $('coTotal').textContent = money(t.total);
   $('coGst').textContent = gstText(t);
   $('cashIn').value = '';
+  $('printOn').checked = !!receiptSettings.autoPrint;   // remembers your last choice
   setPayType('Cash');
   openSheet('checkoutSheet');
 });
@@ -564,11 +566,15 @@ $('checkoutSheet').addEventListener('submit', (e) => {
     change,
   };
   enqueue('sale', sale);  // saved to IndexedDB now, sent to the Sales sheet in the background
+  rememberLastSale(sale);
+  const wantPrint = $('printOn').checked;
+  if (receiptSettings.autoPrint !== wantPrint) { receiptSettings.autoPrint = wantPrint; saveReceiptSettings(); }
   clearCart();
   closeSheets();
   renderCart();
   beepSale();
   toast(change !== null ? `Sale saved · Change ${money(Math.round(change * 100))}` : 'Sale saved', false, 3500);
+  if (wantPrint) printReceipt(sale);
 });
 
 // ---- Settings -------------------------------------------------------------------------------
@@ -595,6 +601,34 @@ $('refreshBtn').addEventListener('click', async () => {
   finally { btn.disabled = false; }
 });
 $('syncNowBtn').addEventListener('click', () => flush());
+
+// ---- Receipts -------------------------------------------------------------------------------
+$('reprintBtn').addEventListener('click', () => {
+  const sale = lastSale();
+  if (!sale) return toast('No sale to reprint yet', true);
+  closeSheets();
+  printReceipt(sale);
+});
+$('receiptSetBtn').addEventListener('click', () => {
+  const s = receiptSettings;
+  $('rsName').value = s.shopName; $('rsAddress').value = s.address; $('rsAbn').value = s.abn;
+  $('rsPhone').value = s.phone; $('rsFooter').value = s.footer; $('rsPaper').value = s.paper;
+  openSheet('receiptSheet');
+});
+function readReceiptForm() {
+  Object.assign(receiptSettings, {
+    shopName: $('rsName').value.trim(), address: $('rsAddress').value.trim(), abn: $('rsAbn').value.trim(),
+    phone: $('rsPhone').value.trim(), footer: $('rsFooter').value.trim(), paper: $('rsPaper').value,
+  });
+  saveReceiptSettings();
+}
+$('receiptSheet').addEventListener('submit', (e) => { e.preventDefault(); readReceiptForm(); closeSheets(); toast('Receipt settings saved'); });
+$('testPrintBtn').addEventListener('click', () => {
+  readReceiptForm();
+  const sale = sampleSale();
+  sale.gst = settings.gstEnabled ? sale.gst : 0;
+  printReceipt(sale);
+});
 $('restartCamBtn').addEventListener('click', async () => {
   closeSheets();
   if (settings.cameraEnabled) await scanner.restart().catch(() => {});

@@ -227,6 +227,36 @@ input:focus { border-color: var(--accent); }
 }
 .toast.bad { background: var(--danger); }
 
+select.select {
+  display: block; width: 100%; margin-top: 6px; min-height: var(--tap); padding: 0 12px;
+  border-radius: 12px; border: 2px solid var(--line); background: #000; color: #fff; font: inherit; font-size: 18px;
+}
+
+/* ---------- Receipt (print only) ---------- */
+.receipt { display: none; }
+@media print {
+  @page { margin: 0; }
+  html, body { background: #fff !important; height: auto; }
+  body > *:not(#receipt) { display: none !important; }
+  #receipt {
+    display: block !important; color: #000; background: #fff;
+    font: 12px/1.35 "Courier New", Courier, monospace; padding: 3mm 4mm 8mm;
+  }
+  #receipt.w80 { width: 72mm; }              /* 80 mm paper, ~72 mm printable */
+  #receipt.w58 { width: 48mm; font-size: 10.5px; padding: 2mm 2mm 8mm; }
+  #receipt.a4  { width: 90mm; margin: 15mm auto; font-size: 13px; }
+  #receipt hr { border: 0; border-top: 1px dashed #000; margin: 2mm 0; }
+  #receipt .r-row { display: flex; justify-content: space-between; gap: 2mm; }
+  #receipt .r-row span:first-child { overflow-wrap: anywhere; }
+  #receipt .r-row span:last-child { white-space: nowrap; }
+  #receipt .r-shop { text-align: center; font-size: 1.45em; font-weight: 700; }
+  #receipt .r-center { text-align: center; }
+  #receipt .r-title { text-align: center; font-weight: 700; margin: 2mm 0 1mm; letter-spacing: 1px; }
+  #receipt .r-total { font-size: 1.35em; font-weight: 700; margin-top: 1mm; }
+  #receipt .r-strong { font-weight: 700; }
+  #receipt .r-footer { margin-top: 1mm; }
+}
+
 /* Landscape phones/tablets: put camera and cart side by side. */
 @media (orientation: landscape) and (min-width: 700px) {
   .app { grid-template-rows: minmax(0, 1fr); grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
