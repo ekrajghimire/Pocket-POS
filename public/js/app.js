@@ -713,7 +713,7 @@ $('reprintBtn').addEventListener('click', () => {
 });
 $('receiptSetBtn').addEventListener('click', () => {
   const s = receiptSettings;
-  $('rsName').value = s.shopName; $('rsAddress').value = s.address; $('rsAbn').value = s.abn;
+  $('rsName').value = s.shopName; $('rsAddress').value = s.address; $('rsAddress2').value = s.address2 || ''; $('rsAbn').value = s.abn;
   $('rsPhone').value = s.phone; $('rsFooter').value = s.footer; $('rsPaper').value = s.paper;
   $('rsDrawer').checked = !!s.drawerEnabled; $('rsDrawerCash').checked = !!s.drawerOnCash;
   $('rsDrawerMethod').value = s.drawerMethod || 'print';
@@ -722,7 +722,7 @@ $('receiptSetBtn').addEventListener('click', () => {
 });
 function readReceiptForm() {
   Object.assign(receiptSettings, {
-    shopName: $('rsName').value.trim(), address: $('rsAddress').value.trim(), abn: $('rsAbn').value.trim(),
+    shopName: $('rsName').value.trim(), address: $('rsAddress').value.trim(), address2: $('rsAddress2').value.trim(), abn: $('rsAbn').value.trim(),
     phone: $('rsPhone').value.trim(), footer: $('rsFooter').value.trim(), paper: $('rsPaper').value,
     drawerEnabled: $('rsDrawer').checked, drawerOnCash: $('rsDrawerCash').checked,
     drawerMethod: $('rsDrawerMethod').value,

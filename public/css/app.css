@@ -255,14 +255,37 @@ select.select {
     display: block !important; color: #000; background: #fff;
     font: 12px/1.35 "Courier New", Courier, monospace; padding: 3mm 4mm 8mm;
   }
-  #receipt.w80 { width: 72mm; }              /* 80 mm paper, ~72 mm printable */
-  #receipt.w58 { width: 48mm; font-size: 10.5px; padding: 2mm 2mm 8mm; }
+  #receipt.w80 { width: 72mm; font-size: 11px; }   /* 80 mm paper, ~72 mm printable */
+  #receipt.w58 { width: 48mm; font-size: 10px; padding: 2mm 1.5mm 8mm; }
+  #receipt.w58 .r-sum span:nth-child(even) { min-width: 15mm; }
   #receipt.a4  { width: 90mm; margin: 15mm auto; font-size: 13px; }
   #receipt hr { border: 0; border-top: 1px dashed #000; margin: 2mm 0; }
   #receipt .r-row { display: flex; justify-content: space-between; gap: 2mm; }
   #receipt .r-row span:first-child { overflow-wrap: anywhere; }
   #receipt .r-row span:last-child { white-space: nowrap; }
-  #receipt .r-shop { text-align: center; font-size: 1.45em; font-weight: 700; }
+  #receipt .r-shop { text-align: center; font-size: 1.3em; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; margin-bottom: .5mm; }
+  #receipt .r-meta { text-align: right; margin: 3mm 0 2mm; }
+  /* item table */
+  #receipt table.r-items { width: 100%; border-collapse: collapse; font: inherit; table-layout: auto; }
+  #receipt .r-items th { font-weight: 700; text-align: left; padding: .6mm 0; white-space: nowrap; }
+  #receipt .r-items td { padding: .8mm 0 0; vertical-align: top; }
+  #receipt .r-items tr.rule td { padding: 0; }
+  #receipt .r-items tr.rule div { border-top: 1px dashed #000; margin: 1mm 0; }
+  #receipt .r-items .sn { width: 1%; padding-right: 1.2ch; }
+  #receipt .r-items .nm { overflow-wrap: anywhere; }
+  #receipt .r-items .q { width: 1%; text-align: center; padding-left: 1ch; padding-right: 1ch; white-space: nowrap; }
+  #receipt .r-items .n { width: 1%; text-align: right; white-space: nowrap; padding-left: 1.2ch; }
+  #receipt .r-items.narrow .qr { padding-left: 1ch; }
+  #receipt .r-items.narrow tbody.item td { padding-top: 0; }
+  #receipt .r-items.narrow tbody.item tr:first-child td { padding-top: 1mm; }
+  /* totals + payment: one grid, labels and values right-aligned */
+  #receipt .r-sum { display: grid; grid-template-columns: 1fr auto; column-gap: 2ch; margin-top: 2mm; align-items: baseline; }
+  #receipt .r-sum span { text-align: right; }
+  #receipt .r-sum span:nth-child(even) { min-width: 20mm; }
+  #receipt .r-sum .gap { grid-column: 1 / -1; height: 1.5mm; }
+  #receipt .r-sum .r-grand { font-size: 1.25em; font-weight: 700; padding: .5mm 0; }
+  #receipt .r-rule { border-top: 1px dashed #000; margin: 2.5mm 0 2mm; }
+  #receipt .r-footer { text-transform: uppercase; font-weight: 700; }
   #receipt .r-center { text-align: center; }
   #receipt .r-title { text-align: center; font-weight: 700; margin: 2mm 0 1mm; letter-spacing: 1px; }
   #receipt .r-total { font-size: 1.35em; font-weight: 700; margin-top: 1mm; }

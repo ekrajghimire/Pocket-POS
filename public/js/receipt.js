@@ -12,7 +12,7 @@ const LAST_SALE_KEY = 'pos_last_sale_v1';
 
 export const receiptSettings = Object.assign(
   {
-    shopName: 'Pocket POS', address: '', abn: '', phone: '', footer: 'Thank you!', paper: '80', autoPrint: false,
+    shopName: 'Pocket POS', address: '', address2: '', abn: '', phone: '', footer: 'Thank you for visiting us', paper: '80', autoPrint: false,
     drawerEnabled: false,   // a cash drawer is plugged into this device's receipt printer
     drawerOnCash: true,     // pop it automatically for cash sales
     drawerMethod: 'print',  // 'print' = print a slip (printer driver opens the drawer)
@@ -30,57 +30,90 @@ const $$ = (dollars) => fmt.format(Number(dollars) || 0);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const row = (left, right, cls = '') => `<div class="r-row ${cls}"><span>${left}</span><span>${right}</span></div>`;
 
-/** "2026-11-07 15:20:31" -> "07/11/2026 3:20 pm" */
-function niceDate(text) {
+/** "2026-11-07 15:20:31" -> { date: "2026-11-07", time: "3:20:31 pm" } (same style as the old receipts) */
+function splitDate(text) {
   const d = new Date(String(text).replace(' ', 'T'));
-  if (isNaN(d)) return esc(text);
-  return d.toLocaleString('en-AU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+  if (isNaN(d)) return { date: esc(text), time: '' };
+  const pad = (n) => String(n).padStart(2, '0');
+  const h = d.getHours() % 12 || 12;
+  return {
+    date: `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`,
+    time: `${h}:${pad(d.getMinutes())}:${pad(d.getSeconds())} ${d.getHours() < 12 ? 'am' : 'pm'}`,
+  };
 }
+const num = (v) => (Number(v) || 0).toFixed(2);   // 2.5 -> "2.50" (no $ inside the table)
+const qtyText = (q) => (Number.isInteger(Number(q)) ? String(q) : Number(q).toFixed(3));
+const sumRow = (label, value, cls = '') => `<span class="${cls}">${label}</span><span class="${cls}">${value}</span>`;
 
 /** Build the receipt HTML for a sale record (the same object that is saved to the Sales sheet). */
 export function receiptHtml(sale) {
   const s = receiptSettings;
   const gst = Number(sale.gst) || 0;
   const exclusive = Number(sale.total) > Number(sale.subtotal) + 0.001;
-  // In Australia a document with the seller's ABN and the GST amount works as a tax invoice.
-  const title = gst > 0 && s.abn ? 'TAX INVOICE' : 'RECEIPT';
+  const { date, time } = splitDate(sale.date_time);
 
+  // Shop header (centred)
   const header = [
     `<div class="r-shop">${esc(s.shopName || 'Receipt')}</div>`,
     s.address && `<div class="r-center">${esc(s.address)}</div>`,
-    s.abn && `<div class="r-center">ABN ${esc(s.abn)}</div>`,
-    s.phone && `<div class="r-center">Ph ${esc(s.phone)}</div>`,
-    `<div class="r-title">${title}</div>`,
-    row(niceDate(sale.date_time), ''),
-    row(`No. ${esc(sale.sale_id)}`, ''),
+    s.address2 && `<div class="r-center">${esc(s.address2)}</div>`,
+    s.abn && `<div class="r-center">ABN: ${esc(s.abn)}</div>`,
+    s.phone && `<div class="r-center">Ph: ${esc(s.phone)}</div>`,
+    // With an ABN and GST, the words "Tax Invoice" make this a valid Australian tax invoice.
+    gst > 0 && s.abn && '<div class="r-center r-title">TAX INVOICE</div>',
   ].filter(Boolean).join('');
 
-  const items = sale.items.map((i) => {
-    const qtyLine = i.qty === 1 ? '' : row(`&nbsp;&nbsp;${i.qty} x ${$$(i.price)}`, '');
-    return row(esc(i.name), $$(i.line_total), 'r-item') + qtyLine;
-  }).join('');
+  // Receipt number, date and time (right-aligned, like the old receipts)
+  const meta = `<div class="r-meta">
+      <div>Receipt No: ${esc(sale.sale_id)}</div>
+      <div>Date: ${date}</div>
+      <div>Time: ${time}</div>
+    </div>`;
 
-  const itemCount = sale.items.reduce((n, i) => n + (Number(i.qty) || 0), 0);
-  let totals = '';
-  if (exclusive) {
-    totals += row('Subtotal', $$(sale.subtotal)) + row('GST 10%', $$(gst));
+  // Item table: S.N | NAME | QTY | RATE | AMT.
+  // On narrow 58 mm paper each item takes two lines: the name, then "qty x rate ... amount".
+  // Dashed rules are full-width rows (one continuous line, not one per column).
+  const rule = (cols) => `<tr class="rule"><td colspan="${cols}"><div></div></td></tr>`;
+  let table;
+  if (s.paper === '58') {
+    const rows = sale.items.map((i, n) => `<tbody class="item">
+        <tr><td class="sn">${n + 1}</td><td colspan="2" class="nm">${esc(i.name)}</td></tr>
+        <tr><td></td><td class="qr">${qtyText(i.qty)} x ${num(i.price)}</td><td class="n">${num(i.line_total)}</td></tr>
+      </tbody>`).join('');
+    table = `<table class="r-items narrow">
+        <thead>${rule(3)}<tr><th class="sn">S.N</th><th class="nm">NAME / QTY x RATE</th><th class="n">AMT</th></tr>${rule(3)}</thead>
+        ${rows}
+        <tbody>${rule(3)}</tbody>
+      </table>`;
+  } else {
+    const rows = sale.items.map((i, n) => `<tr>
+        <td class="sn">${n + 1}</td><td class="nm">${esc(i.name)}</td>
+        <td class="q">${qtyText(i.qty)}</td><td class="n">${num(i.price)}</td><td class="n">${num(i.line_total)}</td>
+      </tr>`).join('');
+    table = `<table class="r-items">
+        <thead>${rule(5)}<tr><th class="sn">S.N</th><th class="nm">NAME</th><th class="q">QTY</th><th class="n">RATE</th><th class="n">AMT</th></tr>${rule(5)}</thead>
+        <tbody>${rows}</tbody>
+        <tbody>${rule(5)}</tbody>
+      </table>`;
   }
-  totals += row('TOTAL', $$(sale.total), 'r-total');
-  if (gst > 0 && !exclusive) totals += row('Includes GST', $$(gst));
 
-  let payment = row(`Paid by ${esc(sale.payment_type)}`, '');
+  // Totals (right-aligned)
+  let sums = sumRow('Net Amount:', num(sale.subtotal));
+  if (gst > 0) sums += sumRow(exclusive ? 'GST (10%):' : 'GST (incl.):', num(gst));
+  sums += sumRow('Total:', '$' + num(sale.total), 'r-grand');
+
+  // Payment (same grid as the totals, so everything lines up)
+  let pay = '<i class="gap"></i>' + sumRow('Payment:', esc(sale.payment_type));
   if (sale.payment_type === 'Cash' && sale.cash_received !== null && sale.cash_received !== undefined) {
     const due = Number(sale.cash_received) - Number(sale.change || 0);
     const rounding = Math.round((due - Number(sale.total)) * 100) / 100;
-    if (Math.abs(rounding) >= 0.01) payment += row('Cash rounding', (rounding > 0 ? '+' : '−') + $$(Math.abs(rounding)));
-    payment += row('Cash', $$(sale.cash_received)) + row('Change', $$(sale.change), 'r-strong');
+    if (Math.abs(rounding) >= 0.01) pay += sumRow('Rounding:', (rounding > 0 ? '+' : '-') + num(Math.abs(rounding)));
+    pay += sumRow('Cash:', num(sale.cash_received)) + sumRow('Change:', num(sale.change), 'r-strong');
   }
 
-  return header
-    + '<hr>' + items
-    + '<hr>' + row(`${itemCount} item${itemCount === 1 ? '' : 's'}`, '') + totals
-    + '<hr>' + payment
-    + (s.footer ? `<hr><div class="r-center r-footer">${esc(s.footer)}</div>` : '');
+  return header + meta + table
+    + `<div class="r-sum">${sums}${pay}</div>`
+    + (s.footer ? `<div class="r-rule"></div><div class="r-center r-footer">${esc(s.footer)}</div>` : '');
 }
 
 /** Put the receipt into the hidden #receipt element and open the print dialog. */
