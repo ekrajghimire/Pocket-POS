@@ -682,13 +682,22 @@ $('checkoutSheet').addEventListener('submit', (e) => {
 // ---- Settings -------------------------------------------------------------------------------
 // ---- Theme (Auto / Light / Dark), saved on this device ---------------------------------------
 function showThemeChoice() {
-  const cur = window.PocketTheme ? window.PocketTheme.get() : 'dark';
-  document.querySelectorAll('#themePick button').forEach((b) => b.classList.toggle('on', b.dataset.theme === cur));
+  if (!window.PocketTheme) return;
+  const mode = window.PocketTheme.getMode();
+  const accent = window.PocketTheme.getAccent();
+  document.querySelectorAll('#themePick button').forEach((b) => b.classList.toggle('on', b.dataset.mode === mode));
+  document.querySelectorAll('#accentPick button').forEach((b) => b.classList.toggle('on', b.dataset.accent === accent));
 }
 $('themePick').addEventListener('click', (e) => {
   const b = e.target.closest('button');
   if (!b || !window.PocketTheme) return;
-  window.PocketTheme.set(b.dataset.theme);
+  window.PocketTheme.setMode(b.dataset.mode);
+  showThemeChoice();
+});
+$('accentPick').addEventListener('click', (e) => {
+  const b = e.target.closest('button');
+  if (!b || !window.PocketTheme) return;
+  window.PocketTheme.setAccent(b.dataset.accent);
   showThemeChoice();
 });
 

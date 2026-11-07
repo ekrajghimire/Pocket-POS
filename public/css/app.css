@@ -49,8 +49,8 @@ html[data-theme="light"] {
   color-scheme: light;
 }
 
-/* Blue theme: deep navy with bright blue buttons */
-html[data-theme="blue"] {
+/* Blue colour, dark mode: deep navy with bright blue buttons */
+html[data-accent="blue"] {
   --bg: #0a1222;
   --panel: #101b31;
   --panel-2: #192742;
@@ -71,6 +71,30 @@ html[data-theme="blue"] {
   --backdrop: rgba(3,8,20,.65);
   --shadow: rgba(0,0,0,.5);
   color-scheme: dark;
+}
+
+/* Blue colour, light mode: white with blue buttons */
+html[data-theme="light"][data-accent="blue"] {
+  --bg: #f1f4fa;
+  --panel: #ffffff;
+  --panel-2: #e7edf7;
+  --line: #cdd6e6;
+  --text: #0d1526;
+  --muted: #55607a;
+  --accent: #1f6bff;
+  --accent-ink: #fff;
+  --accent-text: #1556d6;
+  --accent-soft: rgba(31,107,255,.25);
+  --danger: #d42b2b;
+  --danger-ink: #fff;
+  --input-bg: #fff;
+  --foot-bg: #fff;
+  --invert-bg: #0d1526;
+  --invert-text: #fff;
+  --wedge-bg: #f6f8fc;
+  --backdrop: rgba(10,20,40,.35);
+  --shadow: rgba(10,20,40,.2);
+  color-scheme: light;
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -274,6 +298,9 @@ input[readonly] { opacity: .65; }
   background: var(--panel-2); color: var(--text); font: inherit; font-size: 19px; font-weight: 800;
 }
 .segmented.compact button { font-size: 16px; min-height: 50px; padding: 0 4px; }
+.swatch { display: inline-block; width: 14px; height: 14px; border-radius: 50%; vertical-align: -1px; margin-right: 4px; border: 2px solid rgba(255,255,255,.6); }
+.swatch.green { background: #19e36b; }
+.swatch.blue { background: #2f7bff; }
 .segmented button.on { background: var(--invert-bg); color: var(--invert-text); border-color: var(--invert-bg); }
 .quick-cash { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 .quick-cash button {

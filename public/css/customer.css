@@ -10,11 +10,16 @@ html[data-theme="light"] {
   --hint-bg: #e6e6e1; --new-bg: rgba(25, 227, 107, .22); --new-flash: rgba(25, 227, 107, .55);
   color-scheme: light;
 }
-/* Blue theme */
-html[data-theme="blue"] {
+/* Blue colour: dark (navy) and light */
+html[data-accent="blue"] {
   --bg: #0a1222; --panel: #101b31; --line: #2a3a5c; --text: #fff; --muted: #a7b5d4; --accent: #74abff;
   --hint-bg: #192742; --new-bg: rgba(47, 123, 255, .22); --new-flash: rgba(47, 123, 255, .55);
   color-scheme: dark;
+}
+html[data-theme="light"][data-accent="blue"] {
+  --bg: #f1f4fa; --panel: #ffffff; --line: #d3dbea; --text: #0d1526; --muted: #55607a; --accent: #1556d6;
+  --hint-bg: #e3e9f4; --new-bg: rgba(31, 107, 255, .14); --new-flash: rgba(31, 107, 255, .4);
+  color-scheme: light;
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); overflow: hidden; cursor: default; }
