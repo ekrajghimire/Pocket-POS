@@ -16,6 +16,8 @@ const SAME_CODE_MS = 1500;   // ignore the same barcode for this long after it w
 const GAP_MS = 500;          // an item held still in view only counts once; it must leave the
                              // frame for this long before it can be scanned again (set 0 to disable)
 const FLASH_MS = 1200;       // how long the green "added" banner stays up
+const WEDGE_GAP_MS = 60;     // USB/Bluetooth scanners "type" much faster than this between keys
+const WEDGE_MIN_LEN = 3;     // ignore shorter bursts
 
 // ---- Tiny DOM helpers -----------------------------------------------------------------------
 const $ = (id) => document.getElementById(id);
@@ -120,6 +122,14 @@ async function startApp() {
 
 async function startCamera() {
   const msg = $('camMsg');
+  // Camera switched off in Settings (e.g. a PC with a USB scanner): scanner mode only.
+  if (!settings.cameraEnabled || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    scanner.stopCamera();
+    msg.hidden = true;
+    setScannerMode(true);
+    return;
+  }
+  setScannerMode(false);
   msg.hidden = false;
   msg.textContent = 'Starting camera…';
   try {
@@ -128,18 +138,51 @@ async function startCamera() {
     $('torchBtn').hidden = !scanner.torchSupported;
   } catch (err) {
     const name = err && err.name;
-    msg.textContent = name === 'NotAllowedError'
+    if (name === 'NotFoundError' || name === 'OverconstrainedError') {
+      // No camera on this device: that's fine, use a barcode scanner instead.
+      msg.hidden = true;
+      setScannerMode(true);
+      return;
+    }
+    msg.textContent = (name === 'NotAllowedError'
       ? 'Camera permission is blocked. Allow camera access for this site in your browser settings, then tap here.'
-      : name === 'NotFoundError' ? 'No camera found. Use ⌨︎ to type barcodes.'
       : !window.isSecureContext ? 'The camera needs HTTPS. Open the https:// address.'
-      : 'Camera error: ' + (err.message || name) + ' — tap to retry.';
+      : 'Camera error: ' + (err.message || name) + ' — tap to retry.')
+      + ' A USB/Bluetooth barcode scanner still works.';
   }
 }
 $('camMsg').addEventListener('click', () => startCamera());
 
 // Phones may suspend the camera when the app is backgrounded; revive it on return.
 document.addEventListener('visibilitychange', () => {
-  if (!document.hidden && scanner && appStarted) scanner.ensureAlive().catch(() => startCamera());
+  if (!document.hidden && scanner && appStarted && settings.cameraEnabled && scanner.running) {
+    scanner.ensureAlive().catch(() => startCamera());
+  }
+});
+
+// ---- Scanner mode (no camera): big "ready" panel for USB/Bluetooth scanners ----------------
+function setScannerMode(on) {
+  $('scanner').classList.toggle('wedge-mode', on);
+  $('wedgePanel').hidden = !on;
+  $('torchBtn').hidden = true;
+  updateWedgeFocus();
+}
+
+/** Scans only reach the app while its window has keyboard focus. Show when it doesn't. */
+function updateWedgeFocus() {
+  const focused = document.hasFocus();
+  $('wedgePanel').classList.toggle('unfocused', !focused);
+  $('wedgeTitle').textContent = focused ? 'Ready — scan an item' : 'Click here, then scan';
+  $('wedgeSub').textContent = focused
+    ? 'USB or Bluetooth barcode scanner'
+    : 'This window must be active for the scanner to type into it';
+}
+window.addEventListener('focus', updateWedgeFocus);
+window.addEventListener('blur', updateWedgeFocus);
+$('wedgePanel').addEventListener('click', () => {
+  if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur();
+  window.focus();
+  updateWedgeFocus();
 });
 
 // =============================================================================================
@@ -238,16 +281,42 @@ $('manualForm').addEventListener('submit', (e) => {
   handleCode(code);
 });
 
-// Bluetooth / USB barcode scanners act like a keyboard: fast digits followed by Enter.
+// USB / Bluetooth barcode scanners act like a very fast keyboard: they "type" the code and then
+// press Enter (or Tab). We collect keys that arrive within WEDGE_GAP_MS of each other; a human
+// typing is much slower, so normal typing is never mistaken for a scan.
+// Works on PCs and on phones/tablets with a Bluetooth scanner, with or without the camera.
 let wedge = '', wedgeAt = 0;
 document.addEventListener('keydown', (e) => {
-  if (e.target.matches('input, textarea') || anySheetOpen()) return;
-  const now = Date.now();
-  if (now - wedgeAt > 80) wedge = '';
+  if (e.ctrlKey || e.metaKey || e.altKey || e.isComposing) return;
+  // Typing in a form field (e.g. the New product form) is left alone.
+  if (e.target.matches && e.target.matches('input, textarea, select')) return;
+  const now = performance.now();
+  if (now - wedgeAt > WEDGE_GAP_MS) wedge = '';
   wedgeAt = now;
-  if (e.key === 'Enter' && wedge.length >= 4) { handleCode(wedge); wedge = ''; }
-  else if (e.key.length === 1) wedge += e.key;
-});
+
+  if (e.key === 'Enter' || e.key === 'Tab') {
+    if (wedge.length >= WEDGE_MIN_LEN) {
+      e.preventDefault();               // don't "click" a focused button or move focus
+      const code = wedge;
+      wedge = '';
+      onWedgeScan(code);
+    }
+    return;
+  }
+  if (e.key.length === 1) wedge += e.key;
+}, true);
+
+function onWedgeScan(code) {
+  code = code.trim();
+  if (anySheetOpen()) {
+    // A form is open (checkout, edit…). Don't silently drop the scan: tell the user.
+    beepUnknown();
+    toast('Close the open panel first, then scan again', true);
+    return;
+  }
+  last = { code, acceptedAt: performance.now(), seenAt: performance.now(), used: true };
+  handleCode(code);   // deliberate trigger press: no duplicate filtering needed
+}
 
 // =============================================================================================
 // Cart rendering
@@ -504,12 +573,18 @@ $('checkoutSheet').addEventListener('submit', (e) => {
 
 // ---- Settings -------------------------------------------------------------------------------
 $('menuBtn').addEventListener('click', () => {
+  $('camOn').checked = settings.cameraEnabled;
   $('gstOn').checked = settings.gstEnabled;
   $('gstIncl').checked = settings.pricesIncludeGst;
   updateProductInfo(products.size);
   openSheet('settingsSheet');
 });
 $('syncBadge').addEventListener('click', () => $('menuBtn').click());
+$('camOn').addEventListener('change', () => {
+  settings.cameraEnabled = $('camOn').checked;
+  saveSettings();
+  startCamera();
+});
 $('gstOn').addEventListener('change', () => { settings.gstEnabled = $('gstOn').checked; saveSettings(); renderCart(); });
 $('gstIncl').addEventListener('change', () => { settings.pricesIncludeGst = $('gstIncl').checked; saveSettings(); renderCart(); });
 $('refreshBtn').addEventListener('click', async () => {
@@ -520,7 +595,11 @@ $('refreshBtn').addEventListener('click', async () => {
   finally { btn.disabled = false; }
 });
 $('syncNowBtn').addEventListener('click', () => flush());
-$('restartCamBtn').addEventListener('click', async () => { closeSheets(); await scanner.restart().catch(() => {}); startCamera(); });
+$('restartCamBtn').addEventListener('click', async () => {
+  closeSheets();
+  if (settings.cameraEnabled) await scanner.restart().catch(() => {});
+  startCamera();
+});
 $('logoutBtn').addEventListener('click', async () => {
   await fetch('/api/logout', { method: 'POST' }).catch(() => {});
   localStorage.removeItem('pos_authed');

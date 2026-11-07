@@ -29,6 +29,7 @@ export class Scanner {
     this.stream = null;
     this.track = null;
     this.running = false;
+    this.loopId = 0;                  // bumping this stops the current decode loop
     this.paused = false;
     this.busy = false;
     this.lastDecodeAt = 0;
@@ -53,10 +54,13 @@ export class Scanner {
   async start() {
     if (!this.detector && !this.worker) await this.initDecoder();
     await this.openCamera();
-    if (!this.running) {
-      this.running = true;
-      this.scheduleNext();
-    }
+    this.startLoop();
+  }
+
+  /** (Re)start the decode loop. Any older loop sees a stale loopId and stops. */
+  startLoop() {
+    this.running = true;
+    this.scheduleNext(++this.loopId);
   }
 
   async openCamera() {
@@ -82,6 +86,8 @@ export class Scanner {
     // If the OS kills the camera (e.g. app backgrounded on iOS), reopen it when we come back.
     this.track.addEventListener('ended', () => { this.track = null; });
     this.computeCrop();
+    // A new stream means old frame callbacks may never fire, so restart the loop.
+    if (this.running) this.startLoop();
   }
 
   /** Restart the camera only if it died (called when the app becomes visible again). */
@@ -97,13 +103,20 @@ export class Scanner {
   async restart() {
     this.stopCamera();
     await this.openCamera();
+    this.startLoop();
   }
 
+  /** Turn the camera off completely (e.g. scanner-only mode on a PC). */
   stopCamera() {
+    this.running = false;
+    this.loopId++;
     if (this.stream) this.stream.getTracks().forEach((t) => t.stop());
     this.stream = null;
     this.track = null;
+    this.video.srcObject = null;
   }
+
+  get active() { return this.running && !!this.track && this.track.readyState === 'live'; }
 
   capabilities() {
     try { return (this.track && this.track.getCapabilities) ? this.track.getCapabilities() : {}; }
@@ -190,14 +203,15 @@ export class Scanner {
     this.minInterval = 50; // ~20 fps is plenty for the software decoder
   }
 
-  scheduleNext() {
-    if (!this.running) return;
+  scheduleNext(id) {
+    if (!this.running || id !== this.loopId) return;
     // requestVideoFrameCallback fires once per *new* camera frame (no wasted decodes).
-    if (this.video.requestVideoFrameCallback) this.video.requestVideoFrameCallback(() => this.tick());
-    else requestAnimationFrame(() => this.tick());
+    if (this.video.requestVideoFrameCallback) this.video.requestVideoFrameCallback(() => this.tick(id));
+    else requestAnimationFrame(() => this.tick(id));
   }
 
-  async tick() {
+  async tick(id) {
+    if (id !== this.loopId) return;
     const now = performance.now();
     if (!this.paused && !this.busy && this.video.readyState >= 2 && now - this.lastDecodeAt >= this.minInterval) {
       this.lastDecodeAt = now;
@@ -212,7 +226,7 @@ export class Scanner {
         this.busy = false;
       }
     }
-    this.scheduleNext();
+    this.scheduleNext(id);
   }
 
   accept(text, format) {

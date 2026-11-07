@@ -135,6 +135,20 @@ input:focus { border-color: var(--accent); }
   font-weight: 700; color: #fff; background: rgba(0,0,0,.75); border-radius: var(--radius); padding: 16px;
 }
 
+/* Scanner mode (no camera): a big, obvious "ready" target for USB/Bluetooth scanners */
+.wedge-mode video, .wedge-mode .roi-mask, .wedge-mode .focus-ring { display: none; }
+.wedge-panel {
+  position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 10px; padding: 70px 20px 20px; text-align: center; cursor: pointer;
+  background: #050505; border: 3px solid var(--accent); border-radius: 0;
+}
+.wedge-bars { font-size: 44px; letter-spacing: 2px; color: var(--accent); animation: breathe 2s ease-in-out infinite; }
+.wedge-title { font-size: 26px; font-weight: 900; }
+.wedge-sub { color: var(--muted); font-size: 15px; font-weight: 600; }
+.wedge-panel.unfocused { border-color: var(--warn); }
+.wedge-panel.unfocused .wedge-bars { color: var(--warn); animation: none; }
+@keyframes breathe { 50% { opacity: .45; } }
+
 /* ---------- Cart ---------- */
 .cart { display: flex; flex-direction: column; min-height: 0; background: var(--panel); border-top: 2px solid var(--line); }
 .cart-head { display: flex; align-items: center; padding: 10px 12px; font-weight: 800; color: var(--muted); }

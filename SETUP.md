@@ -152,7 +152,11 @@ npx vercel --prod
 - The badge at top-left shows **Synced**, **N pending** or **Offline**. Sales are saved on the phone first and sent to the sheet in the background, so you can keep selling through a dropout.
 - **☰ → Refresh products** pulls in changes you made directly in the sheet.
 - **🔦** appears only on phones whose browser can control the flashlight (most Android phones). Tap the camera picture to focus where supported.
-- Bluetooth/USB barcode scanners that act as a keyboard also work. Just scan.
+- **USB / Bluetooth barcode scanners** work on a PC, tablet or phone. Plug it in (or pair it) and scan; nothing to set up.
+  - On a computer without a camera, the top panel shows **"Ready — scan an item"**. If it turns amber and says **"Click here, then scan"**, the browser window isn't active. Click it once.
+  - On a laptop with a webcam, you can turn off **☰ → Use camera to scan** to use only the hardware scanner. The setting is remembered per device.
+  - The scanner must send **Enter** (or Tab) after each code. Almost all do by default; if yours doesn't, scan the "add CR/Enter suffix" setup barcode in its manual.
+  - While a panel (checkout, edit…) is open, scans are refused with a warning beep so nothing is added by accident.
 
 ## Troubleshooting
 

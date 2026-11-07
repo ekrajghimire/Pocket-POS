@@ -16,12 +16,13 @@ for (const name of ['.env.local', '.env']) {
   const file = path.join(ROOT, name);
   if (!fs.existsSync(file)) continue;
   const text = fs.readFileSync(file, 'utf8');
-  const re = /^\s*([A-Z0-9_]+)\s*=\s*("(?:[^"\\]|\\.)*"|'[^']*'|.*)\s*$/gm;
+  // [ \t]* (not \s*) so an empty value like "PASSWORD_HASH=" never swallows the next line.
+  const re = /^[ \t]*([A-Z0-9_]+)[ \t]*=[ \t]*("(?:[^"\\]|\\.)*"|'[^']*'|.*?)[ \t]*$/gm;
   let m;
   while ((m = re.exec(text))) {
     let v = m[2].trim();
     if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) v = v.slice(1, -1);
-    if (!(m[1] in process.env)) process.env[m[1]] = v;
+    if (!(m[1] in process.env) && v !== '') process.env[m[1]] = v;
   }
   console.log(`Loaded ${name}`);
 }

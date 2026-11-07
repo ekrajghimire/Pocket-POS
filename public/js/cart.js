@@ -22,7 +22,7 @@ export const roundCash = (cents) => Math.round(cents / 5) * 5;
 
 // ---------- Settings (GST) ----------
 export const settings = Object.assign(
-  { gstEnabled: true, pricesIncludeGst: true },
+  { gstEnabled: true, pricesIncludeGst: true, cameraEnabled: true },
   safeParse(localStorage.getItem(SETTINGS_KEY)),
 );
 export function saveSettings() { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); }
