@@ -67,6 +67,12 @@
         <button class="btn btn-primary" type="submit">Add</button>
       </form>
 
+      <!-- Shown while waiting for the product to edit (Settings > Edit a product) -->
+      <div id="editBanner" class="edit-banner" hidden>
+        <span>✎ Scan or type the product to edit</span>
+        <button id="editBannerCancel" class="chip" type="button">Cancel</button>
+      </div>
+
       <!-- Flash shown after each successful scan -->
       <div id="flash" class="flash" hidden><div id="flashName"></div><div id="flashPrice"></div></div>
 
@@ -99,7 +105,7 @@
 
   <!-- New product (barcode not found) -->
   <form id="newProductSheet" class="sheet" hidden autocomplete="off">
-    <h2>New product</h2>
+    <h2 id="npTitle">New product</h2>
     <label>Barcode <input id="npBarcode" inputmode="numeric" required></label>
     <label>Name <input id="npName" required enterkeyhint="next" autocapitalize="words"></label>
     <label>Price (AUD) <input id="npPrice" inputmode="decimal" required placeholder="0.00" enterkeyhint="done"></label>
@@ -112,7 +118,7 @@
     <p id="npError" class="error"></p>
     <div class="sheet-actions">
       <button class="btn" type="button" data-close>Cancel</button>
-      <button class="btn btn-primary btn-xl" type="submit">Save &amp; Add to Cart</button>
+      <button class="btn btn-primary btn-xl" type="submit" id="npSubmit">Save &amp; Add to Cart</button>
     </div>
   </form>
 
@@ -125,6 +131,7 @@
       <button class="btn qty-btn" type="button" id="editPlus">+</button>
     </div>
     <label>Price for this sale <input id="editPrice" inputmode="decimal"></label>
+    <button class="btn btn-wide" type="button" id="editProductBtn">✎ Edit product (all future sales)</button>
     <div class="sheet-actions">
       <button class="btn btn-danger" type="button" id="editRemove">Remove</button>
       <button class="btn btn-primary btn-xl" type="submit">Done</button>
@@ -174,6 +181,7 @@
     <label class="toggle"><input type="checkbox" id="gstOn"> Show 10% GST</label>
     <label class="toggle"><input type="checkbox" id="gstIncl"> Prices include GST</label>
     <div class="settings-info" id="productInfo"></div>
+    <button class="btn btn-wide" type="button" id="editProductModeBtn">✎ Edit a product</button>
     <button class="btn btn-wide" type="button" id="refreshBtn">↻ Refresh products from sheet</button>
     <button class="btn btn-wide" type="button" id="syncNowBtn">⇅ Sync now</button>
     <button class="btn btn-wide" type="button" id="restartCamBtn">📷 Restart camera</button>

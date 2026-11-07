@@ -151,6 +151,11 @@ npx vercel --prod
 - Tap a cart line to change its quantity or price for this sale, or to remove it. **+ Item** adds something without a barcode.
 - The badge at top-left shows **Synced**, **N pending** or **Offline**. Sales are saved on the phone first and sent to the sheet in the background, so you can keep selling through a dropout.
 - **☰ → Refresh products** pulls in changes you made directly in the sheet.
+- **Edit a product** (name, price, cost, category, stock) in either of two ways:
+  - **From the cart:** tap the item → **✎ Edit product (all future sales)**.
+  - **Without selling:** ☰ → **✎ Edit a product**, then scan the item or type its barcode.
+
+  The change works immediately on that device and is saved to the sheet within seconds. Other devices pick it up with **Refresh products**. "Price for this sale" in the cart only changes the current sale.
 - **Receipts:** set your shop name, address, ABN and paper size once per device in **☰ → Receipt settings**, and use **Print test receipt** to check it. At checkout, tick **🧾 Print receipt**; the app remembers your choice. **☰ → Reprint last receipt** prints the previous sale again. Any printer the device can print to works: USB/network 58 mm or 80 mm thermal receipt printers (install the printer's driver on the PC first), office printers, AirPrint and Android printing. With an ABN entered and GST on, receipts are headed **TAX INVOICE**.
 - **🔦** appears only on phones whose browser can control the flashlight (most Android phones). Tap the camera picture to focus where supported.
 - **USB / Bluetooth barcode scanners** work on a PC, tablet or phone. Plug it in (or pair it) and scan; nothing to set up.

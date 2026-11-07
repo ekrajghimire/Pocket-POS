@@ -210,6 +210,14 @@ function onScan(code, format) {
 
 /** Called for camera scans, manual entry and keyboard-wedge scanners. */
 function handleCode(code) {
+  if (editMode) {                       // Settings > Edit a product: open the editor, don't sell
+    setEditMode(false);
+    const p = lookup(code);
+    beepOk();
+    if (p) openProductForm('edit', p);
+    else openProductForm('new', { barcode: code });
+    return;
+  }
   const product = lookup(code);
   if (product) {
     const line = addProduct(product);
@@ -219,7 +227,7 @@ function handleCode(code) {
   } else {
     beepUnknown();
     flashROI('miss');
-    openNewProduct(code);
+    openProductForm('new', { barcode: code });
   }
 }
 
@@ -408,17 +416,44 @@ $('sheetBackdrop').addEventListener('click', closeSheets);
 document.querySelectorAll('[data-close]').forEach((b) => b.addEventListener('click', closeSheets));
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && anySheetOpen()) closeSheets(); });
 
-// ---- New product -----------------------------------------------------------------------------
-function openNewProduct(code) {
+// ---- Product form: add a NEW product, or EDIT an existing one --------------------------------
+let productFormMode = 'new';   // 'new' | 'edit'
+
+function openProductForm(mode, product) {
+  productFormMode = mode;
   const f = $('newProductSheet');
   f.reset();
-  $('npBarcode').value = code;
+  const editing = mode === 'edit';
+  $('npTitle').textContent = editing ? 'Edit product' : 'New product';
+  $('npSubmit').textContent = editing ? 'Save changes' : 'Save & Add to Cart';
+  $('npBarcode').readOnly = editing;    // the barcode identifies the product, so it can't change
+  $('npBarcode').value = product.barcode;
+  if (editing) {
+    $('npName').value = product.name || '';
+    $('npPrice').value = product.price != null ? Number(product.price).toFixed(2) : '';
+    $('npCost').value = product.cost != null ? Number(product.cost).toFixed(2) : '';
+    $('npCategory').value = product.category || '';
+    $('npStock').value = product.stock != null ? product.stock : '';
+  }
   $('npError').textContent = '';
   $('categoryList').innerHTML = categories().map((c) => `<option value="${esc(c)}">`).join('');
   openSheet('newProductSheet');
   // Note: iOS only shows the keyboard for focus() inside a tap; Android shows it straight away.
-  $('npName').focus();
+  if (editing) { $('npPrice').focus(); $('npPrice').select(); } else $('npName').focus();
 }
+
+// Settings > Edit a product: the next scan (camera, scanner or typed) opens the editor.
+let editMode = false;
+function setEditMode(on) {
+  editMode = on;
+  $('editBanner').hidden = !on;
+}
+$('editProductModeBtn').addEventListener('click', () => {
+  closeSheets();
+  setEditMode(true);
+  last = { code: null, acceptedAt: -1e9, seenAt: -1e9, used: false };   // allow the item in view
+});
+$('editBannerCancel').addEventListener('click', (e) => { e.stopPropagation(); setEditMode(false); });
 $('npName').addEventListener('keydown', (e) => {
   if (e.key === 'Enter') { e.preventDefault(); $('npPrice').focus(); }
 });
@@ -441,6 +476,21 @@ $('newProductSheet').addEventListener('submit', async (e) => {
     category: $('npCategory').value.trim(),
     stock: stockText === '' || isNaN(Number(stockText)) ? null : Number(stockText),
   };
+  if (productFormMode === 'edit') {
+    await saveProductLocally(product);   // new price works for the very next scan
+    enqueue('product', product);         // updates the existing row in the sheet, in background
+    // Cart lines for this product pick up the change, unless their price was set just for this sale.
+    for (const l of cart.lines) {
+      if (l.barcode !== barcode) continue;
+      const custom = l.unitCents !== l.baseCents;
+      updateLine(l.key, { name: product.name, baseCents: priceCents, ...(custom ? {} : { unitCents: priceCents }) });
+    }
+    closeSheets();
+    renderCart();
+    toast(`Saved · ${product.name} is now ${money(priceCents)}`);
+    return;
+  }
+
   await saveProductLocally(product);                                    // instant lookup from now on
   enqueue('product', { ...product, created_at: localDateTime() });       // to the sheet, in background
   const line = addProduct(product);
@@ -458,10 +508,16 @@ function openEdit(line) {
   $('editName').textContent = line.name;
   $('editQty').value = line.qty;
   $('editPrice').value = toDollars(line.unitCents).toFixed(2);
+  $('editProductBtn').hidden = !line.barcode || !lookup(line.barcode);   // manual items aren't products
   openSheet('editSheet');
 }
 $('editMinus').addEventListener('click', () => { $('editQty').value = Math.max(0, (parseInt($('editQty').value, 10) || 0) - 1); });
 $('editPlus').addEventListener('click', () => { $('editQty').value = (parseInt($('editQty').value, 10) || 0) + 1; });
+$('editProductBtn').addEventListener('click', () => {
+  const line = cart.lines.find((l) => l.key === editingKey);
+  const p = line && lookup(line.barcode);
+  if (p) openProductForm('edit', p);
+});
 $('editRemove').addEventListener('click', () => { removeLine(editingKey); closeSheets(); renderCart(); });
 $('editSheet').addEventListener('submit', (e) => {
   e.preventDefault();
