@@ -1,7 +1,7 @@
 // theme.js — light / dark / auto theme. Loaded in <head> (before the page is drawn) so there's
 // no flash of the wrong colours. Used by both the POS and the customer display.
 //
-// The choice is saved per device: 'auto' (follow the phone/PC setting), 'light' or 'dark'.
+// The choice is saved per device: 'auto' (follow the phone/PC setting), 'light', 'dark' or 'blue'.
 (function () {
   var KEY = 'pos_theme';
   var mq = window.matchMedia ? window.matchMedia('(prefers-color-scheme: light)') : null;
@@ -15,7 +15,7 @@
     var theme = p === 'auto' ? (mq && mq.matches ? 'light' : 'dark') : p;
     document.documentElement.setAttribute('data-theme', theme);
     var meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.setAttribute('content', theme === 'light' ? '#f2f2ef' : '#000000');
+    if (meta) meta.setAttribute('content', theme === 'light' ? '#f2f2ef' : theme === 'blue' ? '#0a1222' : '#000000');
   }
 
   apply();

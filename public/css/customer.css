@@ -10,6 +10,12 @@ html[data-theme="light"] {
   --hint-bg: #e6e6e1; --new-bg: rgba(25, 227, 107, .22); --new-flash: rgba(25, 227, 107, .55);
   color-scheme: light;
 }
+/* Blue theme */
+html[data-theme="blue"] {
+  --bg: #0a1222; --panel: #101b31; --line: #2a3a5c; --text: #fff; --muted: #a7b5d4; --accent: #74abff;
+  --hint-bg: #192742; --new-bg: rgba(47, 123, 255, .22); --new-flash: rgba(47, 123, 255, .55);
+  color-scheme: dark;
+}
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); overflow: hidden; cursor: default; }
 body { font: 2.4vh/1.25 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
