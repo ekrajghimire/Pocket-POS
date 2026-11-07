@@ -11,7 +11,11 @@ const KEY = 'pos_receipt_v1';
 const LAST_SALE_KEY = 'pos_last_sale_v1';
 
 export const receiptSettings = Object.assign(
-  { shopName: 'Pocket POS', address: '', abn: '', phone: '', footer: 'Thank you!', paper: '80', autoPrint: false },
+  {
+    shopName: 'Pocket POS', address: '', abn: '', phone: '', footer: 'Thank you!', paper: '80', autoPrint: false,
+    drawerEnabled: false,   // a cash drawer is plugged into this device's receipt printer
+    drawerOnCash: true,     // pop it automatically for cash sales
+  },
   safeParse(localStorage.getItem(KEY)),
 );
 export function saveReceiptSettings() { localStorage.setItem(KEY, JSON.stringify(receiptSettings)); }
@@ -84,6 +88,26 @@ export function printReceipt(sale) {
   el.className = 'receipt ' + (paper === '58' ? 'w58' : paper === 'a4' ? 'a4' : 'w80');
   el.innerHTML = receiptHtml(sale);
   // Give the browser a moment to lay out the receipt before printing.
+  return new Promise((resolve) => setTimeout(() => { window.print(); resolve(); }, 60));
+}
+
+/**
+ * Open the cash drawer.
+ *
+ * Drawers plugged into a receipt printer (RJ11/RJ12 cable) are opened BY THE PRINTER, and
+ * the printer's Windows driver can be set to "open cash drawer" whenever it prints. So to open
+ * the drawer we print a tiny slip. This also leaves a paper trail for "no sale" opens.
+ * (A printed receipt opens the drawer by itself, so there's no need to call this as well.)
+ */
+export function openDrawer(reason = 'NO SALE', sale = null) {
+  const el = document.getElementById('receipt');
+  const paper = receiptSettings.paper;
+  el.className = 'receipt slip ' + (paper === '58' ? 'w58' : paper === 'a4' ? 'a4' : 'w80');
+  const now = new Date().toLocaleString('en-AU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+  el.innerHTML = `<div class="r-title">${esc(reason)}</div>`
+    + `<div class="r-center">${esc(now)}</div>`
+    + (sale ? row(`No. ${esc(sale.sale_id)}`, '') + row('Total', $$(sale.total))
+      + (sale.cash_received != null ? row('Cash', $$(sale.cash_received)) + row('Change', $$(sale.change), 'r-strong') : '') : '');
   return new Promise((resolve) => setTimeout(() => { window.print(); resolve(); }, 60));
 }
 

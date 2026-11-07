@@ -159,6 +159,27 @@ npx vercel --prod
   - The scanner must send **Enter** (or Tab) after each code. Almost all do by default; if yours doesn't, scan the "add CR/Enter suffix" setup barcode in its manual.
   - While a panel (checkout, edit…) is open, scans are refused with a warning beep so nothing is added by accident.
 
+## 10. Windows PC with a receipt printer and cash drawer
+
+This is for a cash drawer plugged into the receipt printer with a small phone-style RJ11/RJ12 cable. The **printer** opens the drawer, and its driver can do this every time something is printed.
+
+1. **Install the printer.** Connect the printer by USB and install its Windows driver from the CD or the maker's website. Then print a Windows test page. Plug the drawer cable into the printer's **DK / Drawer** port, not the LAN port.
+2. **Make it the default printer.** Go to Settings → Bluetooth & devices → Printers & scanners and turn **off** "Let Windows manage my default printer". Then click the receipt printer → **Set as default**.
+3. **Turn on the drawer in the driver.** On the same screen, open the printer → **Printer properties**. Look for a **Cash Drawer** option, usually on the **Device Settings** tab or under **Printing preferences → Advanced**. Set it to open **before printing**. Each driver words this differently, for example "Cash Drawer #1: Open before printing" or "Kick drawer". If there are drawer #1 and #2 settings, use #1; if the drawer doesn't open, try #2.
+4. **One-tap printing with no print dialog.** Right-click the desktop → New → Shortcut, and paste:
+   ```
+   "C:\Program Files\Google\Chrome\Application\chrome.exe" --kiosk-printing --app=https://pocket-pos-ten.vercel.app
+   ```
+   Name it **Pocket POS**. Use your own domain later if you connect one. **Close every Chrome window first**, then always open the POS from this shortcut. The setting only works when Chrome starts from the shortcut. Edge works the same way with `"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"`. While this Chrome window is open, anything you print from it goes straight to the default printer.
+5. **In Pocket POS:** go to ☰ → **Receipt settings**. Set Paper to **80 mm**, tick **Cash drawer is plugged into this device's receipt printer**, then tap **Test: open drawer**.
+
+How it behaves:
+- **Cash sale:** the drawer opens. With 🧾 ticked you get a full receipt; without it, a small "CASH SALE" slip showing total, cash and change.
+- **Card / Other sale:** the drawer only opens if you print a receipt.
+- **💰 button (or F9):** opens the drawer and prints a short "NO SALE" slip with the time. This gives you a paper record of every open.
+
+If the slip prints but the drawer doesn't open, the driver setting in step 3 is off, set to the wrong drawer number, or the cable is in the wrong port. If a lot of blank paper feeds out, choose the roll-paper size (e.g. "80 × 297 mm" or the roll option) in **Printing preferences**.
+
 ## Troubleshooting
 
 | Problem | Fix |

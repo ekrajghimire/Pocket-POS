@@ -227,6 +227,7 @@ input:focus { border-color: var(--accent); }
 }
 .toast.bad { background: var(--danger); }
 
+h2.sub-h { font-size: 18px; margin: 22px 0 0; padding-top: 14px; border-top: 2px solid var(--line); }
 select.select {
   display: block; width: 100%; margin-top: 6px; min-height: var(--tap); padding: 0 12px;
   border-radius: 12px; border: 2px solid var(--line); background: #000; color: #fff; font: inherit; font-size: 18px;
@@ -255,6 +256,7 @@ select.select {
   #receipt .r-total { font-size: 1.35em; font-weight: 700; margin-top: 1mm; }
   #receipt .r-strong { font-weight: 700; }
   #receipt .r-footer { margin-top: 1mm; }
+  #receipt.slip { padding-bottom: 4mm; }
 }
 
 /* Landscape phones/tablets: put camera and cart side by side. */

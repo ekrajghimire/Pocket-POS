@@ -1,7 +1,7 @@
 // app.js — wires everything together: login, scanner -> cart, bottom sheets, checkout, settings.
 
 import { Scanner } from './scanner.js';
-import { receiptSettings, saveReceiptSettings, printReceipt, rememberLastSale, lastSale, sampleSale } from './receipt.js';
+import { receiptSettings, saveReceiptSettings, printReceipt, rememberLastSale, lastSale, sampleSale, openDrawer } from './receipt.js';
 import { unlockAudio, beepOk, beepUnknown, beepSale } from './feedback.js';
 import {
   cart, settings, saveSettings, addProduct, addManual, updateLine, removeLine, clearCart,
@@ -104,6 +104,7 @@ async function startApp() {
   $('login').hidden = true;
   $('app').hidden = false;
   renderCart();
+  updateDrawerButton();
   if (demoMode) toast('Demo mode: data is stored on the dev server, not Google Sheets', false, 3500);
 
   // 1) Products from IndexedDB: instant, works offline.
@@ -574,7 +575,9 @@ $('checkoutSheet').addEventListener('submit', (e) => {
   renderCart();
   beepSale();
   toast(change !== null ? `Sale saved · Change ${money(Math.round(change * 100))}` : 'Sale saved', false, 3500);
-  if (wantPrint) printReceipt(sale);
+  const popDrawer = payType === 'Cash' && receiptSettings.drawerEnabled && receiptSettings.drawerOnCash;
+  if (wantPrint) printReceipt(sale);            // printing a receipt also opens the drawer (printer driver)
+  else if (popDrawer) openDrawer('CASH SALE', sale);
 });
 
 // ---- Settings -------------------------------------------------------------------------------
@@ -613,15 +616,30 @@ $('receiptSetBtn').addEventListener('click', () => {
   const s = receiptSettings;
   $('rsName').value = s.shopName; $('rsAddress').value = s.address; $('rsAbn').value = s.abn;
   $('rsPhone').value = s.phone; $('rsFooter').value = s.footer; $('rsPaper').value = s.paper;
+  $('rsDrawer').checked = !!s.drawerEnabled; $('rsDrawerCash').checked = !!s.drawerOnCash;
   openSheet('receiptSheet');
 });
 function readReceiptForm() {
   Object.assign(receiptSettings, {
     shopName: $('rsName').value.trim(), address: $('rsAddress').value.trim(), abn: $('rsAbn').value.trim(),
     phone: $('rsPhone').value.trim(), footer: $('rsFooter').value.trim(), paper: $('rsPaper').value,
+    drawerEnabled: $('rsDrawer').checked, drawerOnCash: $('rsDrawerCash').checked,
   });
   saveReceiptSettings();
+  updateDrawerButton();
 }
+
+// ---- Cash drawer ----------------------------------------------------------------------------
+function updateDrawerButton() { $('drawerBtn').hidden = !receiptSettings.drawerEnabled; }
+function noSale() {
+  if (!receiptSettings.drawerEnabled) return;
+  if (anySheetOpen()) closeSheets();
+  openDrawer('NO SALE');
+}
+$('drawerBtn').addEventListener('click', noSale);
+$('testDrawerBtn').addEventListener('click', () => { readReceiptForm(); openDrawer('DRAWER TEST'); });
+// F9 opens the drawer from the keyboard (handy next to a USB scanner).
+document.addEventListener('keydown', (e) => { if (e.key === 'F9') { e.preventDefault(); noSale(); } });
 $('receiptSheet').addEventListener('submit', (e) => { e.preventDefault(); readReceiptForm(); closeSheets(); toast('Receipt settings saved'); });
 $('testPrintBtn').addEventListener('click', () => {
   readReceiptForm();

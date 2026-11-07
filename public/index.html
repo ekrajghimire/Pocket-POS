@@ -53,6 +53,7 @@
       <div class="scanner-top">
         <button id="syncBadge" class="badge" type="button" aria-label="Sync status"><span class="dot"></span><span id="syncText">…</span></button>
         <div class="spacer"></div>
+        <button id="drawerBtn" class="icon-btn" type="button" aria-label="Open cash drawer" title="Open cash drawer (F9)" hidden>💰</button>
         <button id="torchBtn" class="icon-btn" type="button" aria-label="Flashlight" hidden>🔦</button>
         <button id="manualBtn" class="icon-btn" type="button" aria-label="Type a barcode">⌨︎</button>
         <button id="menuBtn" class="icon-btn" type="button" aria-label="Settings">☰</button>
@@ -199,6 +200,12 @@
     </label>
     <p class="hint">With an ABN and GST turned on, receipts print as a TAX INVOICE.</p>
     <button class="btn btn-wide" type="button" id="testPrintBtn">Print test receipt</button>
+
+    <h2 class="sub-h">Cash drawer</h2>
+    <label class="toggle"><input type="checkbox" id="rsDrawer"> Cash drawer is plugged into this device's receipt printer</label>
+    <label class="toggle"><input type="checkbox" id="rsDrawerCash"> Open it automatically for cash sales</label>
+    <p class="hint">Needs the printer driver's "open cash drawer" option turned on (see SETUP.md). Adds a 💰 button at the top, shortcut F9.</p>
+    <button class="btn btn-wide" type="button" id="testDrawerBtn">Test: open drawer</button>
     <div class="sheet-actions">
       <button class="btn" type="button" data-close>Cancel</button>
       <button class="btn btn-primary btn-xl" type="submit">Save</button>
