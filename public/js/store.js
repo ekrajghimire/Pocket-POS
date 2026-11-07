@@ -62,6 +62,7 @@ export async function loadProductsFromCache() {
   products.clear();
   for (const p of list) products.set(p.barcode, p);
   const meta = await tx('meta', 'readonly', (s) => s.get('productsFetchedAt'));
+  if (meta && !syncState.productsAt) { syncState.productsAt = meta.value; saveTime(PRODUCTS_AT_KEY, meta.value); }
   return { count: products.size, fetchedAt: meta ? meta.value : null };
 }
 
@@ -73,7 +74,10 @@ export async function replaceProducts(list) {
   for (const p of list) products.set(p.barcode, p);
   for (const p of pending) products.set(p.barcode, p);
   await tx('products', 'readwrite', (s) => { s.clear(); for (const p of products.values()) s.put(p); });
-  await tx('meta', 'readwrite', (s) => s.put({ key: 'productsFetchedAt', value: Date.now() }));
+  const now = Date.now();
+  await tx('meta', 'readwrite', (s) => s.put({ key: 'productsFetchedAt', value: now }));
+  saveTime(PRODUCTS_AT_KEY, now);
+  emit({ productsAt: now });
 }
 
 export async function saveProductLocally(p) {
@@ -115,7 +119,18 @@ export async function refreshProducts() {
 // ---------- Outbox / background sync ----------
 
 const listeners = new Set();
-export const syncState = { pending: 0, status: 'synced', lastError: null };
+// When this device last talked to the sheet successfully, and last downloaded the products.
+const LAST_SYNC_KEY = 'pos_last_sync_at';
+const PRODUCTS_AT_KEY = 'pos_products_at';
+const readTime = (k) => { try { return Number(localStorage.getItem(k)) || null; } catch { return null; } };
+const saveTime = (k, t) => { try { localStorage.setItem(k, String(t)); } catch { /* storage blocked */ } };
+
+export const syncState = {
+  pending: 0, status: 'synced', lastError: null,
+  lastSyncAt: readTime(LAST_SYNC_KEY),     // last successful save to the Google Sheet
+  productsAt: readTime(PRODUCTS_AT_KEY),   // last product list download
+};
+function markSynced() { const t = Date.now(); saveTime(LAST_SYNC_KEY, t); emit({ lastSyncAt: t }); }
 export function onSyncChange(fn) { listeners.add(fn); fn(syncState); }
 function emit(patch) { Object.assign(syncState, patch); listeners.forEach((fn) => fn(syncState)); }
 
@@ -143,12 +158,24 @@ export function scheduleFlush(delay = 0) {
   flushTimer = setTimeout(flush, delay);
 }
 
-export async function flush() {
+/**
+ * Send queued writes to the server. With force=true (the "Sync now" button) it also contacts the
+ * server when nothing is waiting, to confirm the connection and update "Last synced".
+ */
+export async function flush(force = false) {
   if (flushing) return;
   flushing = true;
   try {
     const items = (await getAll('outbox')).slice(0, 200); // max 200 writes per request
-    if (!items.length) { emit({ pending: 0, status: 'synced', lastError: null }); return; }
+    if (!items.length) {
+      if (force && !navigator.onLine) { emit({ status: 'offline', lastError: 'offline' }); return; }
+      if (force) {
+        await api('/api/sync', { method: 'POST', body: { products: [], sales: [] } });   // no sheet writes
+        markSynced();
+      }
+      emit({ pending: 0, status: 'synced', lastError: null });
+      return;
+    }
     if (!navigator.onLine) { emit({ status: 'offline' }); return; }
     emit({ status: 'syncing' });
 
@@ -157,6 +184,7 @@ export async function flush() {
       sales: items.filter((i) => i.type === 'sale').map((i) => i.payload),
     };
     await api('/api/sync', { method: 'POST', body });
+    markSynced();
 
     // Success: remove what we sent.
     await tx('outbox', 'readwrite', (s) => { for (const i of items) s.delete(i.id); });

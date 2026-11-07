@@ -325,6 +325,10 @@ input[readonly] { opacity: .65; }
   width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--line); background: var(--panel-2);
   color: var(--text); font-size: 18px; font-weight: 800;
 }
+.sync-times { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; margin: 10px 0 4px; font-size: 15px; }
+.sync-times dt { color: var(--muted); font-weight: 700; }
+.sync-times dd { margin: 0 0 4px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.sync-times dd small { display: block; color: var(--muted); font-weight: 600; font-size: 13px; }
 .set-section {
   margin-top: 14px; padding: 12px 14px 14px; border: 1px solid var(--line); border-radius: var(--radius);
   background: var(--bg);

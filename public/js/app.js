@@ -10,7 +10,7 @@ import {
 } from './cart.js';
 import {
   products, lookup, loadProductsFromCache, refreshProducts, saveProductLocally, categories,
-  enqueue, flush, startSyncLoop, onSyncChange, setAuthLostHandler, api,
+  enqueue, flush, startSyncLoop, onSyncChange, setAuthLostHandler, api, syncState,
 } from './store.js';
 
 // ---- Tunables -------------------------------------------------------------------------------
@@ -703,6 +703,7 @@ $('accentPick').addEventListener('click', (e) => {
 
 $('menuBtn').addEventListener('click', () => {
   showThemeChoice();
+  updateSyncTimes();
   $('camOn').checked = settings.cameraEnabled;
   $('gstOn').checked = settings.gstEnabled;
   $('gstIncl').checked = settings.pricesIncludeGst;
@@ -724,7 +725,42 @@ $('refreshBtn').addEventListener('click', async () => {
   catch (err) { toast('Refresh failed: ' + err.message, true); }
   finally { btn.disabled = false; }
 });
-$('syncNowBtn').addEventListener('click', () => flush());
+$('syncNowBtn').addEventListener('click', async () => {
+  const btn = $('syncNowBtn');
+  btn.disabled = true;
+  await flush(true);
+  btn.disabled = false;
+  if (syncState.status === 'synced') toast('Synced ✓');
+  else if (syncState.status === 'offline' || !navigator.onLine) toast("You're offline — it will sync when the connection is back", true, 3500);
+  else toast('Could not sync: ' + (syncState.lastError || 'no connection'), true);
+});
+
+// ---- "Last synced" / "Products updated" times ------------------------------------------------
+/** 1794012345678 -> { when: "Today 10:42 pm", ago: "5 min ago" } */
+function whenText(ts) {
+  if (!ts) return { when: 'Never', ago: '' };
+  const d = new Date(ts);
+  const now = new Date();
+  const dayStart = (x) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  const days = Math.round((dayStart(now) - dayStart(d)) / 86400000);
+  const time = d.toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit' }).replace(/\s/g, ' ');
+  const day = days === 0 ? 'Today' : days === 1 ? 'Yesterday'
+    : d.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' });
+  const mins = Math.floor((now - d) / 60000);
+  const ago = mins < 1 ? 'just now' : mins < 60 ? `${mins} min ago` : mins < 1440 ? `${Math.floor(mins / 60)} h ago` : `${Math.floor(mins / 1440)} d ago`;
+  return { when: `${day} ${time}`, ago };
+}
+function showWhen(el, ts) {
+  const { when, ago } = whenText(ts);
+  el.replaceChildren(Object.assign(document.createElement('span'), { textContent: when }));
+  if (ago) el.append(Object.assign(document.createElement('small'), { textContent: ago }));
+}
+function updateSyncTimes() {
+  showWhen($('lastSyncInfo'), syncState.lastSyncAt);
+  showWhen($('productsAtInfo'), syncState.productsAt);
+}
+// Keep the "x min ago" fresh while Settings is open.
+setInterval(() => { if (!$('settingsSheet').hidden) updateSyncTimes(); }, 30000);
 
 // ---- Receipts -------------------------------------------------------------------------------
 $('reprintBtn').addEventListener('click', () => {
@@ -819,6 +855,7 @@ function updateProductInfo(n) {
 
 // ---- Sync indicator ---------------------------------------------------------------------------
 onSyncChange((s) => {
+  if ($('lastSyncInfo')) updateSyncTimes();
   // Settings > Products & sync status line
   $('syncInfo').textContent = s.status === 'synced' ? '✓ Everything is saved to the Google Sheet'
     : s.status === 'offline' ? `Offline · ${s.pending} change${s.pending === 1 ? '' : 's'} waiting to sync`
