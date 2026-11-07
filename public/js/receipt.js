@@ -15,6 +15,8 @@ export const receiptSettings = Object.assign(
     shopName: 'Pocket POS', address: '', abn: '', phone: '', footer: 'Thank you!', paper: '80', autoPrint: false,
     drawerEnabled: false,   // a cash drawer is plugged into this device's receipt printer
     drawerOnCash: true,     // pop it automatically for cash sales
+    drawerMethod: 'print',  // 'print' = print a slip (printer driver opens the drawer)
+                            // 'helper' = Pocket POS Drawer Helper on this PC (no paper)
   },
   safeParse(localStorage.getItem(KEY)),
 );
@@ -91,15 +93,55 @@ export function printReceipt(sale) {
   return new Promise((resolve) => setTimeout(() => { window.print(); resolve(); }, 60));
 }
 
+// ---- Cash drawer -------------------------------------------------------------------------------
+// Drawers plugged into a receipt printer (RJ11/RJ12 cable) are opened BY THE PRINTER. Two ways:
+//  'print'  : print a tiny slip; the printer driver's "open drawer before printing" option pops it.
+//  'helper' : the Pocket POS Drawer Helper (windows-helper folder) runs on the PC and sends the
+//             printer the raw "kick drawer" command. Nothing is printed.
+
+export const HELPER_URL = 'http://127.0.0.1:17777';
+
+async function callHelper(path, method = 'GET') {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 2500);
+  try {
+    // targetAddressSpace tells Chrome this is a request to this computer (local network access).
+    const res = await fetch(HELPER_URL + path, { method, signal: ctrl.signal, cache: 'no-store', targetAddressSpace: 'loopback' });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.ok) throw new Error(data.error || `Helper replied ${res.status}`);
+    return data;
+  } catch (err) {
+    if (err.name === 'AbortError' || err instanceof TypeError) {
+      throw new Error('Drawer Helper is not running on this PC (or Chrome blocked it)');
+    }
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/** Ask the helper if it's running. Resolves {ok, printer, pin} or throws. */
+export const checkHelper = () => callHelper('/status');
+
 /**
- * Open the cash drawer.
- *
- * Drawers plugged into a receipt printer (RJ11/RJ12 cable) are opened BY THE PRINTER, and
- * the printer's Windows driver can be set to "open cash drawer" whenever it prints. So to open
- * the drawer we print a tiny slip. This also leaves a paper trail for "no sale" opens.
- * (A printed receipt opens the drawer by itself, so there's no need to call this as well.)
+ * Open the drawer. Resolves to how it was opened: 'helper', 'slip' or 'failed'.
+ * With the helper, nothing prints; if the helper can't be reached and `fallback` is true,
+ * a slip is printed instead so the drawer still opens.
  */
-export function openDrawer(reason = 'NO SALE', sale = null) {
+export async function openDrawer(reason = 'NO SALE', sale = null, { fallback = true, onError = () => {} } = {}) {
+  if (receiptSettings.drawerMethod === 'helper') {
+    try { await callHelper('/open', 'POST'); return 'helper'; }
+    catch (err) {
+      onError(err);
+      if (!fallback) return 'failed';
+    }
+  }
+  await printDrawerSlip(reason, sale);
+  return 'slip';
+}
+
+/** Print a short slip; with the driver's cash-drawer option on, printing it opens the drawer. */
+export function printDrawerSlip(reason = 'NO SALE', sale = null) {
   const el = document.getElementById('receipt');
   const paper = receiptSettings.paper;
   el.className = 'receipt slip ' + (paper === '58' ? 'w58' : paper === 'a4' ? 'a4' : 'w80');

@@ -180,6 +180,20 @@ How it behaves:
 
 If the slip prints but the drawer doesn't open, the driver setting in step 3 is off, set to the wrong drawer number, or the cable is in the wrong port. If a lot of blank paper feeds out, choose the roll-paper size (e.g. "80 × 297 mm" or the roll option) in **Printing preferences**.
 
+### Open the drawer without printing: Drawer Helper (recommended)
+
+The **Drawer Helper** is a small program in the `windows-helper` folder. It runs on the Windows PC and sends the printer the "open drawer" command directly, so **no paper prints**. It uses only Windows' built-in PowerShell, so there is nothing to install.
+
+1. On the Windows PC, open Pocket POS → ☰ → **Receipt settings**. Under Cash drawer, set **Open the drawer with** to **Drawer Helper on this PC**, then click **Download Drawer Helper for Windows**.
+2. Right-click the downloaded zip → **Properties** → tick **Unblock** → OK. Then right-click it → **Extract All**, into somewhere permanent such as `Documents`.
+3. In the extracted folder, right-click **Start Pocket POS Drawer.cmd** → **Edit**. Check that `POS_PRINTER=XP-80C` matches your printer's exact name, and that `POS_ORIGINS` is your Pocket POS address. When you add your own domain later, add it here separated by a comma. Save.
+4. Double-click **Start Pocket POS Drawer.cmd**. If Windows says "Windows protected your PC", click **More info → Run anyway**. A window shows **"Drawer Helper is running"**. Leave it open; you can minimise it.
+5. In Pocket POS, tap **Check Drawer Helper**, then **Test: open drawer**. If Chrome asks to let the site **access other apps and services on this device**, click **Allow**.
+6. **Start it automatically:** press Win + R, type `shell:startup` and press Enter. Put a shortcut to `Start Pocket POS Drawer.cmd` in the folder that opens.
+7. Optional: set the printer driver's CashDrawer option (step 3 above) back to **Don't open**. Card-sale receipts will then stop popping the drawer, and Pocket POS opens it itself for cash sales.
+
+If the helper isn't running, Pocket POS shows a warning and prints a slip instead, so the drawer still opens. If the drawer doesn't open but the helper says "Drawer opened", change `POS_PIN` to `2` or `5` in the .cmd file and restart it.
+
 ## Troubleshooting
 
 | Problem | Fix |

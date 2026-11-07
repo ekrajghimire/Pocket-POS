@@ -227,6 +227,7 @@ input:focus { border-color: var(--accent); }
 }
 .toast.bad { background: var(--danger); }
 
+a.link-btn { display: flex; align-items: center; justify-content: center; text-decoration: none; }
 h2.sub-h { font-size: 18px; margin: 22px 0 0; padding-top: 14px; border-top: 2px solid var(--line); }
 select.select {
   display: block; width: 100%; margin-top: 6px; min-height: var(--tap); padding: 0 12px;

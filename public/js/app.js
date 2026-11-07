@@ -1,7 +1,7 @@
 // app.js — wires everything together: login, scanner -> cart, bottom sheets, checkout, settings.
 
 import { Scanner } from './scanner.js';
-import { receiptSettings, saveReceiptSettings, printReceipt, rememberLastSale, lastSale, sampleSale, openDrawer } from './receipt.js';
+import { receiptSettings, saveReceiptSettings, printReceipt, rememberLastSale, lastSale, sampleSale, openDrawer, checkHelper } from './receipt.js';
 import { unlockAudio, beepOk, beepUnknown, beepSale } from './feedback.js';
 import {
   cart, settings, saveSettings, addProduct, addManual, updateLine, removeLine, clearCart,
@@ -576,8 +576,17 @@ $('checkoutSheet').addEventListener('submit', (e) => {
   beepSale();
   toast(change !== null ? `Sale saved · Change ${money(Math.round(change * 100))}` : 'Sale saved', false, 3500);
   const popDrawer = payType === 'Cash' && receiptSettings.drawerEnabled && receiptSettings.drawerOnCash;
-  if (wantPrint) printReceipt(sale);            // printing a receipt also opens the drawer (printer driver)
-  else if (popDrawer) openDrawer('CASH SALE', sale);
+  if (receiptSettings.drawerMethod === 'helper') {
+    // Helper opens the drawer (no paper); the receipt prints separately if wanted.
+    if (popDrawer) {
+      openDrawer('CASH SALE', sale, { fallback: !wantPrint, onError: (err) => toast(drawerErrorText(err), true, 4500) });
+    }
+    if (wantPrint) printReceipt(sale);
+  } else if (wantPrint) {
+    printReceipt(sale);                          // the printer driver opens the drawer as it prints
+  } else if (popDrawer) {
+    openDrawer('CASH SALE', sale);               // print a small slip, which opens the drawer
+  }
 });
 
 // ---- Settings -------------------------------------------------------------------------------
@@ -617,6 +626,8 @@ $('receiptSetBtn').addEventListener('click', () => {
   $('rsName').value = s.shopName; $('rsAddress').value = s.address; $('rsAbn').value = s.abn;
   $('rsPhone').value = s.phone; $('rsFooter').value = s.footer; $('rsPaper').value = s.paper;
   $('rsDrawer').checked = !!s.drawerEnabled; $('rsDrawerCash').checked = !!s.drawerOnCash;
+  $('rsDrawerMethod').value = s.drawerMethod || 'print';
+  updateDrawerMethodHint();
   openSheet('receiptSheet');
 });
 function readReceiptForm() {
@@ -624,6 +635,7 @@ function readReceiptForm() {
     shopName: $('rsName').value.trim(), address: $('rsAddress').value.trim(), abn: $('rsAbn').value.trim(),
     phone: $('rsPhone').value.trim(), footer: $('rsFooter').value.trim(), paper: $('rsPaper').value,
     drawerEnabled: $('rsDrawer').checked, drawerOnCash: $('rsDrawerCash').checked,
+    drawerMethod: $('rsDrawerMethod').value,
   });
   saveReceiptSettings();
   updateDrawerButton();
@@ -631,13 +643,41 @@ function readReceiptForm() {
 
 // ---- Cash drawer ----------------------------------------------------------------------------
 function updateDrawerButton() { $('drawerBtn').hidden = !receiptSettings.drawerEnabled; }
-function noSale() {
+
+function drawerErrorText(err) {
+  return `${err.message}. Printing a slip instead — start "Start Pocket POS Drawer" on this PC.`;
+}
+
+async function noSale() {
   if (!receiptSettings.drawerEnabled) return;
   if (anySheetOpen()) closeSheets();
-  openDrawer('NO SALE');
+  const how = await openDrawer('NO SALE', null, { onError: (err) => toast(drawerErrorText(err), true, 4500) });
+  if (how === 'helper') toast('Drawer opened');
 }
 $('drawerBtn').addEventListener('click', noSale);
-$('testDrawerBtn').addEventListener('click', () => { readReceiptForm(); openDrawer('DRAWER TEST'); });
+
+$('testDrawerBtn').addEventListener('click', async () => {
+  readReceiptForm();
+  const how = await openDrawer('DRAWER TEST', null, { onError: (err) => toast(drawerErrorText(err), true, 4500) });
+  if (how === 'helper') toast('Sent "open drawer" to the printer');
+});
+
+$('checkHelperBtn').addEventListener('click', async () => {
+  try {
+    const s = await checkHelper();
+    toast(`Drawer Helper is running · printer: ${s.printer || '(none)'}`);
+  } catch (err) { toast(err.message, true, 4500); }
+});
+
+function updateDrawerMethodHint() {
+  const helper = $('rsDrawerMethod').value === 'helper';
+  $('drawerMethodHint').textContent = helper
+    ? 'Windows PC only: download the helper below, run "Start Pocket POS Drawer", then tap Check. Nothing prints when the drawer opens.'
+    : 'Needs the printer driver option "Open drawer before printing" turned on. Prints a short slip each time.';
+  $('helperDownload').hidden = !helper;
+  $('checkHelperBtn').hidden = !helper;
+}
+$('rsDrawerMethod').addEventListener('change', updateDrawerMethodHint);
 // F9 opens the drawer from the keyboard (handy next to a USB scanner).
 document.addEventListener('keydown', (e) => { if (e.key === 'F9') { e.preventDefault(); noSale(); } });
 $('receiptSheet').addEventListener('submit', (e) => { e.preventDefault(); readReceiptForm(); closeSheets(); toast('Receipt settings saved'); });

@@ -204,8 +204,17 @@
     <h2 class="sub-h">Cash drawer</h2>
     <label class="toggle"><input type="checkbox" id="rsDrawer"> Cash drawer is plugged into this device's receipt printer</label>
     <label class="toggle"><input type="checkbox" id="rsDrawerCash"> Open it automatically for cash sales</label>
-    <p class="hint">Needs the printer driver's "open cash drawer" option turned on (see SETUP.md). Adds a 💰 button at the top, shortcut F9.</p>
+    <label>Open the drawer with
+      <select id="rsDrawerMethod" class="select">
+        <option value="helper">Drawer Helper on this PC — no paper</option>
+        <option value="print">Print a small slip (printer driver opens it)</option>
+      </select>
+    </label>
+    <p class="hint" id="drawerMethodHint"></p>
+    <a class="btn btn-wide link-btn" id="helperDownload" href="/downloads/PocketPOS-Drawer-Helper.zip" download>⬇ Download Drawer Helper for Windows</a>
+    <button class="btn btn-wide" type="button" id="checkHelperBtn">Check Drawer Helper</button>
     <button class="btn btn-wide" type="button" id="testDrawerBtn">Test: open drawer</button>
+    <p class="hint">Adds a 💰 button at the top. Keyboard shortcut: F9.</p>
     <div class="sheet-actions">
       <button class="btn" type="button" data-close>Cancel</button>
       <button class="btn btn-primary btn-xl" type="submit">Save</button>
