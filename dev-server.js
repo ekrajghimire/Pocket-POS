@@ -71,7 +71,8 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(PORT, () => {
-  const demo = !process.env.SHEET_ID ? '  (DEMO MODE: no SHEET_ID set — data goes to .data/demo-db.json)' : '';
+  const sheets = process.env.SHEET_ID && (process.env.GOOGLE_SERVICE_ACCOUNT_JSON || process.env.GOOGLE_PRIVATE_KEY);
+  const demo = !sheets ? '  (DEMO MODE: Google Sheets not configured — data goes to .data/demo-db.json)' : '';
   const pw = !process.env.PASSWORD_HASH ? '\n  No PASSWORD_HASH set — log in with the password "demo".' : '';
   console.log(`\n  Pocket POS running at http://localhost:${PORT}${demo}${pw}\n`);
 });
