@@ -1,6 +1,7 @@
 // app.js — wires everything together: login, scanner -> cart, bottom sheets, checkout, settings.
 
 import { Scanner } from './scanner.js';
+import { setStateProvider, publishCart, publishSale, openCustomerDisplay } from './display.js';
 import { receiptSettings, saveReceiptSettings, printReceipt, rememberLastSale, lastSale, sampleSale, openDrawer, checkHelper } from './receipt.js';
 import { unlockAudio, beepOk, beepUnknown, beepSale } from './feedback.js';
 import {
@@ -356,7 +357,34 @@ function renderCart(bumpFirst = false) {
   $('cartTotal').textContent = money(t.total);
   $('gstLine').textContent = gstText(t);
   $('checkoutBtn').disabled = n === 0;
+  publishCart(bumpFirst && cart.lines[0] ? cart.lines[0].key : null);   // update the customer display
 }
+
+// ---- Customer display (second screen) --------------------------------------------------------
+// What the customer sees: built from the cart, already formatted, so customer.js stays simple.
+setStateProvider(() => {
+  const t = totals();
+  return {
+    shop: receiptSettings.shopName || '',
+    lines: cart.lines.map((l) => ({
+      key: l.key, name: l.name, qty: l.qty,
+      unit: money(l.unitCents), total: money(l.unitCents * l.qty),
+      was: l.unitCents < l.baseCents ? money(l.baseCents) : null,   // show discounts, not mark-ups
+    })),
+    count: itemCount(),
+    total: money(t.total),
+    gstText: gstText(t),
+  };
+});
+
+async function showCustomerDisplay() {
+  const r = await openCustomerDisplay();
+  if (r === 'blocked') toast('Pop-up blocked: allow pop-ups for this site, then try again', true, 4500);
+  else toast('Customer display opened. Drag it to the customer screen if needed, then click it for full screen', false, 4500);
+  setTimeout(() => publishCart(), 800);
+}
+$('custBtn').addEventListener('click', showCustomerDisplay);
+$('custDisplayBtn').addEventListener('click', () => { closeSheets(); showCustomerDisplay(); });
 
 function gstText(t) {
   if (!settings.gstEnabled) return '';
@@ -629,6 +657,12 @@ $('checkoutSheet').addEventListener('submit', (e) => {
   clearCart();
   closeSheets();
   renderCart();
+  publishSale({
+    total: money(t.total),
+    payment: payType,
+    paid: cashReceived !== null ? money(Math.round(cashReceived * 100)) : (payType !== 'Cash' ? money(t.total) : null),
+    change: change !== null ? money(Math.round(change * 100)) : null,
+  });
   beepSale();
   toast(change !== null ? `Sale saved · Change ${money(Math.round(change * 100))}` : 'Sale saved', false, 3500);
   const popDrawer = payType === 'Cash' && receiptSettings.drawerEnabled && receiptSettings.drawerOnCash;
@@ -736,7 +770,7 @@ function updateDrawerMethodHint() {
 $('rsDrawerMethod').addEventListener('change', updateDrawerMethodHint);
 // F9 opens the drawer from the keyboard (handy next to a USB scanner).
 document.addEventListener('keydown', (e) => { if (e.key === 'F9') { e.preventDefault(); noSale(); } });
-$('receiptSheet').addEventListener('submit', (e) => { e.preventDefault(); readReceiptForm(); closeSheets(); toast('Receipt settings saved'); });
+$('receiptSheet').addEventListener('submit', (e) => { e.preventDefault(); readReceiptForm(); closeSheets(); publishCart(); toast('Receipt settings saved'); });
 $('testPrintBtn').addEventListener('click', () => {
   readReceiptForm();
   const sale = sampleSale();

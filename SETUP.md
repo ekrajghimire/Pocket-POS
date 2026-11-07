@@ -199,6 +199,17 @@ The **Drawer Helper** is a small program in the `windows-helper` folder. It runs
 
 If the helper isn't running, Pocket POS shows a warning and prints a slip instead, so the drawer still opens. If the drawer doesn't open but the helper says "Drawer opened", change `POS_PIN` to `2` or `5` in the .cmd file and restart it.
 
+## 11. Customer display (second screen)
+
+A second monitor plugged into the POS computer can show the customer each item, quantity and price, and the running total, live as you scan. After payment it shows **Thank you** with the cash paid and change; when idle it shows your shop name.
+
+1. Plug in the second monitor. In Windows go to **Settings → System → Display** and choose **Extend these displays**.
+2. In Pocket POS (Chrome or Edge), click **🖥** in the top bar, or ☰ → **Open customer display**.
+3. If Chrome asks to **manage windows on all your displays**, click **Allow**. The display then opens straight onto the second screen. Otherwise drag it across, or press **Win + Shift + →** to move it.
+4. **Click once** on the customer display to make it full screen.
+
+The shop name comes from ☰ → Receipt settings. The display only shows information and can't change anything. It must be open in the same browser on the same computer as the POS. If it's closed by accident, press 🖥 again; it picks up the current sale straight away. If the pop-up is blocked, click the blocked-pop-up icon in the address bar → **Always allow**.
+
 ## Troubleshooting
 
 | Problem | Fix |
