@@ -680,7 +680,20 @@ $('checkoutSheet').addEventListener('submit', (e) => {
 });
 
 // ---- Settings -------------------------------------------------------------------------------
+// ---- Theme (Auto / Light / Dark), saved on this device ---------------------------------------
+function showThemeChoice() {
+  const cur = window.PocketTheme ? window.PocketTheme.get() : 'dark';
+  document.querySelectorAll('#themePick button').forEach((b) => b.classList.toggle('on', b.dataset.theme === cur));
+}
+$('themePick').addEventListener('click', (e) => {
+  const b = e.target.closest('button');
+  if (!b || !window.PocketTheme) return;
+  window.PocketTheme.set(b.dataset.theme);
+  showThemeChoice();
+});
+
 $('menuBtn').addEventListener('click', () => {
+  showThemeChoice();
   $('camOn').checked = settings.cameraEnabled;
   $('gstOn').checked = settings.gstEnabled;
   $('gstIncl').checked = settings.pricesIncludeGst;

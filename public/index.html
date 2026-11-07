@@ -16,6 +16,7 @@
   <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
   <link rel="icon" href="/icons/icon-192.png">
   <link rel="stylesheet" href="/css/app.css">
+  <script src="/js/theme.js"></script>
 </head>
 <body>
 
@@ -177,6 +178,12 @@
   <!-- Settings -->
   <div id="settingsSheet" class="sheet" hidden>
     <h2>Settings</h2>
+    <label>Theme</label>
+    <div class="segmented" id="themePick">
+      <button type="button" data-theme="auto">Auto</button>
+      <button type="button" data-theme="light">☀︎ Light</button>
+      <button type="button" data-theme="dark">☾ Dark</button>
+    </div>
     <label class="toggle"><input type="checkbox" id="camOn"> Use camera to scan</label>
     <p class="hint">Turn off on a PC with a USB/Bluetooth scanner. Hardware scanners work either way.</p>
     <label class="toggle"><input type="checkbox" id="gstOn"> Show 10% GST</label>

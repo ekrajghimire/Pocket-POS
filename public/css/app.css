@@ -7,15 +7,45 @@
   --line: #2e2e2e;
   --text: #fff;
   --muted: #a8a8a8;
-  --accent: #19e36b;      /* success / primary */
-  --accent-ink: #000;
+  --accent: #19e36b;      /* success / primary (button background) */
+  --accent-ink: #000;     /* text on accent buttons */
+  --accent-text: #19e36b; /* accent used as text colour */
   --warn: #ffb020;        /* pending */
   --danger: #ff4d4d;
+  --danger-ink: #000;     /* text on red backgrounds */
+  --input-bg: #000;
+  --foot-bg: #000;
+  --invert-bg: #fff;      /* toasts, selected segment */
+  --invert-text: #000;
+  --wedge-bg: #050505;
+  --backdrop: rgba(0,0,0,.6);
+  --shadow: rgba(0,0,0,.5);
   --radius: 14px;
   --tap: 52px;            /* minimum touch target height */
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   color-scheme: dark;
+}
+
+/* Light theme (☰ → Theme). Everything else uses the variables above. */
+html[data-theme="light"] {
+  --bg: #f2f2ef;
+  --panel: #ffffff;
+  --panel-2: #ebebe7;
+  --line: #d3d3cd;
+  --text: #111;
+  --muted: #5d5d58;
+  --accent-text: #0b7d3b;
+  --danger: #d42b2b;
+  --danger-ink: #fff;
+  --input-bg: #fff;
+  --foot-bg: #fff;
+  --invert-bg: #111;
+  --invert-text: #fff;
+  --wedge-bg: #f7f7f4;
+  --backdrop: rgba(0,0,0,.35);
+  --shadow: rgba(0,0,0,.2);
+  color-scheme: light;
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -57,12 +87,12 @@ input { -webkit-user-select: text; user-select: text; }
   background: var(--panel-2); color: var(--text); font: inherit; font-weight: 700; margin-left: 8px;
 }
 .chip-danger { color: var(--danger); }
-.chip-danger.armed { background: var(--danger); color: #000; border-color: var(--danger); }
+.chip-danger.armed { background: var(--danger); color: var(--danger-ink); border-color: var(--danger); }
 
 label { display: block; font-weight: 700; color: var(--muted); font-size: 15px; margin-top: 12px; }
 input:not([type=checkbox]) {
   display: block; width: 100%; margin-top: 6px; min-height: var(--tap); padding: 0 14px;
-  border-radius: 12px; border: 2px solid var(--line); background: #000; color: #fff;
+  border-radius: 12px; border: 2px solid var(--line); background: var(--input-bg); color: var(--text);
   font: inherit; font-size: 20px; font-weight: 600; outline: none;
 }
 input:focus { border-color: var(--accent); }
@@ -71,8 +101,8 @@ input:focus { border-color: var(--accent); }
 .login { min-height: 100%; display: grid; place-items: center; padding: 24px; }
 .login-card { width: min(420px, 100%); display: flex; flex-direction: column; gap: 10px; }
 .login-card .btn { margin-top: 10px; }
-.logo { font-size: 30px; font-weight: 900; letter-spacing: 1px; color: var(--accent); margin-bottom: 18px; }
-.logo span { color: #fff; }
+.logo { font-size: 30px; font-weight: 900; letter-spacing: 1px; color: var(--accent-text); margin-bottom: 18px; }
+.logo span { color: var(--text); }
 
 /* ---------- App layout: camera top, cart bottom ---------- */
 .app { height: 100dvh; display: grid; grid-template-rows: 44dvh minmax(0, 1fr); grid-template-columns: minmax(0, 1fr); overflow: hidden; }
@@ -143,9 +173,9 @@ input:focus { border-color: var(--accent); }
 .wedge-panel {
   position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: 10px; padding: 70px 20px 20px; text-align: center; cursor: pointer;
-  background: #050505; border: 3px solid var(--accent); border-radius: 0;
+  background: var(--wedge-bg); border: 3px solid var(--accent); border-radius: 0;
 }
-.wedge-bars { font-size: 44px; letter-spacing: 2px; color: var(--accent); animation: breathe 2s ease-in-out infinite; }
+.wedge-bars { font-size: 44px; letter-spacing: 2px; color: var(--accent-text); animation: breathe 2s ease-in-out infinite; }
 .wedge-title { font-size: 26px; font-weight: 900; }
 .wedge-sub { color: var(--muted); font-size: 15px; font-weight: 600; }
 .wedge-panel.unfocused { border-color: var(--warn); }
@@ -180,13 +210,13 @@ input[readonly] { opacity: .65; }
 .line-total { font-weight: 800; font-variant-numeric: tabular-nums; min-width: 72px; text-align: right; }
 .line .q {
   width: 44px; height: 44px; border-radius: 12px; border: 2px solid var(--line);
-  background: var(--panel-2); color: #fff; font-size: 24px; font-weight: 800;
+  background: var(--panel-2); color: var(--text); font-size: 24px; font-weight: 800;
 }
 .line .qty { min-width: 28px; text-align: center; font-weight: 800; font-size: 19px; }
 
 .cart-foot {
   display: flex; align-items: center; gap: 12px; padding: 10px 12px calc(10px + var(--safe-bottom));
-  border-top: 2px solid var(--line); background: #000;
+  border-top: 2px solid var(--line); background: var(--foot-bg);
 }
 .total-block { min-width: 0; flex-shrink: 0; }
 .cart-foot .btn-xl { min-width: 0; }
@@ -195,7 +225,7 @@ input[readonly] { opacity: .65; }
 .gst-line { color: var(--muted); font-size: 13px; font-weight: 600; min-height: 1em; }
 
 /* ---------- Bottom sheets ---------- */
-.backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 10; }
+.backdrop { position: fixed; inset: 0; background: var(--backdrop); z-index: 10; }
 .sheet {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 11; max-height: 92dvh; overflow-y: auto;
   background: var(--panel); border-top-left-radius: 22px; border-top-right-radius: 22px;
@@ -216,33 +246,33 @@ input[readonly] { opacity: .65; }
 .segmented { display: flex; gap: 8px; margin-top: 14px; }
 .segmented button {
   flex: 1; min-height: 58px; border-radius: var(--radius); border: 2px solid var(--line);
-  background: var(--panel-2); color: #fff; font: inherit; font-size: 19px; font-weight: 800;
+  background: var(--panel-2); color: var(--text); font: inherit; font-size: 19px; font-weight: 800;
 }
-.segmented button.on { background: #fff; color: #000; border-color: #fff; }
+.segmented button.on { background: var(--invert-bg); color: var(--invert-text); border-color: var(--invert-bg); }
 .quick-cash { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 .quick-cash button {
   flex: 1 0 28%; min-height: 48px; border-radius: 12px; border: 2px solid var(--line);
-  background: var(--panel-2); color: #fff; font: inherit; font-weight: 800;
+  background: var(--panel-2); color: var(--text); font: inherit; font-weight: 800;
 }
-.change { margin-top: 12px; font-size: 28px; font-weight: 900; text-align: center; color: var(--accent); min-height: 1.2em; }
+.change { margin-top: 12px; font-size: 28px; font-weight: 900; text-align: center; color: var(--accent-text); min-height: 1.2em; }
 .change.short { color: var(--danger); }
 
-.toggle { display: flex; align-items: center; gap: 12px; color: #fff; font-size: 18px; min-height: var(--tap); }
+.toggle { display: flex; align-items: center; gap: 12px; color: var(--text); font-size: 18px; min-height: var(--tap); }
 .toggle input { width: 26px; height: 26px; accent-color: var(--accent); }
 .settings-info { color: var(--muted); font-size: 14px; margin-top: 12px; }
 
 .toast {
   position: fixed; left: 50%; top: 50dvh; transform: translateX(-50%); z-index: 20;
-  max-width: 92vw; padding: 12px 18px; border-radius: var(--radius); background: #fff; color: #000;
-  font-weight: 800; box-shadow: 0 6px 30px rgba(0,0,0,.5);
+  max-width: 92vw; padding: 12px 18px; border-radius: var(--radius); background: var(--invert-bg); color: var(--invert-text);
+  font-weight: 800; box-shadow: 0 6px 30px var(--shadow);
 }
-.toast.bad { background: var(--danger); }
+.toast.bad { background: var(--danger); color: var(--danger-ink); }
 
 a.link-btn { display: flex; align-items: center; justify-content: center; text-decoration: none; }
 h2.sub-h { font-size: 18px; margin: 22px 0 0; padding-top: 14px; border-top: 2px solid var(--line); }
 select.select {
   display: block; width: 100%; margin-top: 6px; min-height: var(--tap); padding: 0 12px;
-  border-radius: 12px; border: 2px solid var(--line); background: #000; color: #fff; font: inherit; font-size: 18px;
+  border-radius: 12px; border: 2px solid var(--line); background: var(--input-bg); color: var(--text); font: inherit; font-size: 18px;
 }
 
 /* ---------- Receipt (print only) ---------- */

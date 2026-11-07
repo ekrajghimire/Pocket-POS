@@ -1,7 +1,14 @@
 /* Customer Display: large, high-contrast, readable from a metre or two away. */
 :root {
   --bg: #000; --panel: #0e0e0e; --line: #262626; --text: #fff; --muted: #9a9a9a; --accent: #19e36b;
+  --hint-bg: #1c1c1c; --new-bg: rgba(25, 227, 107, .16); --new-flash: rgba(25, 227, 107, .5);
   color-scheme: dark;
+}
+/* Light theme: follows the POS setting (☰ → Theme) */
+html[data-theme="light"] {
+  --bg: #f4f4f1; --panel: #ffffff; --line: #d9d9d3; --text: #111; --muted: #5d5d58; --accent: #0b7d3b;
+  --hint-bg: #e6e6e1; --new-bg: rgba(25, 227, 107, .22); --new-flash: rgba(25, 227, 107, .55);
+  color-scheme: light;
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); overflow: hidden; cursor: default; }
@@ -24,8 +31,8 @@ body { font: 2.4vh/1.25 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, H
   padding: 0 1vw 1.2vh; border-bottom: 2px solid var(--line); }
 .items { list-style: none; margin: 0; padding: 0; overflow: hidden; flex: 1; min-height: 0; }
 .items li { padding: 1.5vh 1vw; border-bottom: 1px solid var(--line); font-size: 3.2vh; font-variant-numeric: tabular-nums; }
-.items li.new { background: rgba(25, 227, 107, .16); animation: flash 1.2s ease-out; }
-@keyframes flash { from { background: rgba(25, 227, 107, .5); } }
+.items li.new { background: var(--new-bg); animation: flash 1.2s ease-out; }
+@keyframes flash { from { background: var(--new-flash); } }
 /* long names wrap onto a second line instead of being cut off */
 .items .name { font-weight: 700; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow-wrap: anywhere; }
 .items s { display: block; color: var(--muted); font-size: .65em; }
@@ -52,7 +59,7 @@ body { font: 2.4vh/1.25 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, H
 
 .fs-hint, .no-link {
   position: fixed; left: 50%; bottom: 2vh; transform: translateX(-50%); padding: 1vh 2vw; border-radius: 1vh;
-  background: #1c1c1c; color: var(--muted); font-size: 2vh;
+  background: var(--hint-bg); color: var(--muted); font-size: 2vh;
 }
 .no-link { bottom: auto; top: 2vh; color: #ffb020; }
 
