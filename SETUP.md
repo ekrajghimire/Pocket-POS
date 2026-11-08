@@ -210,6 +210,12 @@ A second monitor plugged into the POS computer can show the customer each item, 
 
 The shop name comes from ☰ → Receipt settings. The display only shows information and can't change anything. It must be open in the same browser on the same computer as the POS. If it's closed by accident, press 🖥 again; it picks up the current sale straight away. If the pop-up is blocked, click the blocked-pop-up icon in the address bar → **Always allow**.
 
+**Parts of the customer screen go black?** This is a known Edge/Chrome drawing problem on some POS terminals, where the customer screen is a second monitor with different scaling or a basic graphics chip. Pocket POS now redraws the customer display every 10 seconds and whenever the window or screen changes, which clears it on its own. If black patches still appear:
+
+1. In Edge open `edge://settings/system` (Chrome: `chrome://settings/system`), turn **off** "Use graphics acceleration when available", and click **Restart**.
+2. In Windows **Settings → System → Display**, select the customer screen and set **Scale** to the same value as the main screen (e.g. both 100%).
+3. Keep the customer display full screen (click it once): full screen redraws more reliably than a window.
+
 ## 12. Weather on the home screen
 
 The home screen shows the time, weekday, date and live weather from **Open-Meteo**. No account or key is needed. Its free API is for non-commercial use. The required credit *"Weather data by Open-Meteo.com"* is shown in the weather location sheet and in the weather button's tooltip.
@@ -250,6 +256,7 @@ To run the automated tests on your Mac: `npm test` (no setup needed; Google is s
 | `Google auth failed` | `GOOGLE_SERVICE_ACCOUNT_JSON` must be the whole file contents, unmodified. |
 | `PASSWORD_HASH is not set` / can't log in | Add the env vars in Vercel and **redeploy**. |
 | "Too many attempts" | 5 wrong passwords in 15 minutes locks that IP for 15 minutes. |
+| Customer display partly or fully black | Turn off graphics acceleration in Edge/Chrome (`edge://settings/system`), restart the browser, and match the scaling of both screens. See section 11. |
 | Barcode lost its leading zero | Format the sheet's barcode column as Plain text and re-type it. |
 | App shows old version after a deploy | Close and reopen the app (updates load in the background), or bump `VERSION` in `public/sw.js`. |
 | Scanning seems slow on iPhone | iOS Safari has no native barcode detector, so the app uses ZXing (software). Keep the barcode inside the box, about 10–20 cm away, and use good light. |

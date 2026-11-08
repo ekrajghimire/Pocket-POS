@@ -13,7 +13,42 @@ let lastStateAt = 0;
 
 function show(id) {
   for (const s of ['idle', 'live', 'thanks']) $(s).hidden = s !== id;
+  repaint();
 }
+
+// ---- Black-screen guard ----
+// On some Windows POS terminals the customer screen is a second monitor with its own scaling
+// or a basic graphics chip. Edge can then leave parts of this window black (unpainted) until
+// something redraws them, and the idle screen rarely changes by itself. So we redraw the
+// WHOLE page whenever the window, screen or visibility changes, after every update, and with
+// every clock tick. The colour change is 1% and lasts 80 ms: nobody can see it.
+// Timers, not animation frames: Edge pauses animation frames for a window it thinks is hidden,
+// which is exactly when this guard is needed.
+let repaintTimer = null;
+function repaint() {
+  if (repaintTimer) return;
+  document.body.classList.add('repaint');
+  repaintTimer = setTimeout(() => { document.body.classList.remove('repaint'); repaintTimer = null; }, 80);
+}
+// Resizing the window by one pixel and back makes Windows hand Edge a fresh drawing surface,
+// which clears black areas left over from moving the window between screens. Only possible
+// for the window Pocket POS opened, and not while it is full screen.
+function nudgeWindow() {
+  if (document.fullscreenElement || !window.opener) return;
+  try { window.resizeBy(1, 0); setTimeout(() => { try { window.resizeBy(-1, 0); } catch { /* not allowed */ } repaint(); }, 120); }
+  catch { /* not allowed */ }
+}
+let resizeTimer = null;
+window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(repaint, 150); });
+document.addEventListener('visibilitychange', () => { if (!document.hidden) repaint(); });
+window.addEventListener('focus', repaint);
+window.addEventListener('pageshow', repaint);
+// Moved to a screen with different scaling (devicePixelRatio changes)
+(function watchScale() {
+  const mq = matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`);
+  mq.addEventListener('change', () => { repaint(); nudgeWindow(); watchScale(); }, { once: true });
+})();
+window.addEventListener('load', () => setTimeout(nudgeWindow, 800));
 
 function renderState(st) {
   lastStateAt = Date.now();
@@ -76,6 +111,7 @@ function tickClock() {
   $('cDate').textContent = now.toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 }
 function renderWeather() {
+  repaint();
   const loc = readLS('pos_weather_loc_v1');
   const w = readLS('pos_weather_last_v1');
   const show = loc && !loc.off && w && Number.isFinite(w.temp);
@@ -87,7 +123,7 @@ function renderWeather() {
   $('cwPlace').textContent = Number.isFinite(w.hi) ? `${loc.name} · ${w.hi}°/${w.lo}°` : loc.name;
 }
 tickClock();
-setInterval(tickClock, 10000);
+setInterval(() => { tickClock(); repaint(); }, 10000);
 renderWeather();
 window.addEventListener('storage', (e) => {
   if (e.key === 'pos_weather_loc_v1' || e.key === 'pos_weather_last_v1') renderWeather();
@@ -100,5 +136,10 @@ function goFullscreen() {
   }
 }
 document.addEventListener('click', goFullscreen);
-document.addEventListener('fullscreenchange', () => { $('fsHint').hidden = !!document.fullscreenElement; });
+document.addEventListener('fullscreenchange', () => {
+  $('fsHint').hidden = !!document.fullscreenElement;
+  repaint();
+  setTimeout(repaint, 300);   // again once the screen has settled
+  if (!document.fullscreenElement) setTimeout(nudgeWindow, 300);
+});
 if (!document.documentElement.requestFullscreen) $('fsHint').hidden = true;
