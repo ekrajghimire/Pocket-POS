@@ -11,57 +11,67 @@
   <script src="/js/theme.js"></script>
 </head>
 <body>
-  <!-- Idle: nothing in the cart -->
-  <section id="idle" class="screen idle">
-    <div class="idle-shop" id="idleShop">Welcome</div>
-    <div class="idle-sub">Your items will appear here</div>
-  </section>
+  <!-- Three columns: main content | dead area (damaged part of the screen, kept black) | side.
+       The widths come from POS ☰ → Customer display layout (customer.js sets them). -->
+  <div id="stage" class="stage">
+    <main class="col main">
+      <!-- Idle: nothing in the cart -->
+      <section id="idle" class="screen idle">
+        <div class="idle-shop" id="idleShop">Welcome</div>
+        <div class="idle-sub">Your items will appear here</div>
+      </section>
 
-  <!-- Live cart -->
-  <section id="live" class="screen live" hidden>
-    <div class="items-wrap">
-      <div class="items-head">
-        <span>Item</span><span class="c">Qty</span><span class="r">Price</span><span class="r">Total</span>
+      <!-- Live cart: the items -->
+      <section id="live" class="screen live" hidden>
+        <div class="items-head">
+          <span>Item</span><span class="c">Qty</span><span class="r price">Price</span><span class="r">Total</span>
+        </div>
+        <ul id="items" class="items"></ul>
+      </section>
+
+      <!-- After payment -->
+      <section id="thanks" class="screen thanks" hidden>
+        <div class="thanks-title">Thank you!</div>
+        <div class="thanks-rows">
+          <div class="trow"><span>Total</span><span id="tTotal"></span></div>
+          <div class="trow" id="tPaidRow"><span id="tPaidLabel">Paid</span><span id="tPaid"></span></div>
+          <div class="trow change" id="tChangeRow"><span>Change</span><span id="tChange"></span></div>
+        </div>
+      </section>
+    </main>
+
+    <div class="dead" aria-hidden="true"></div>
+
+    <aside id="side" class="col side calm">
+      <!-- Running total while scanning -->
+      <div id="summary" class="summary" hidden>
+        <div class="shop" id="shop"></div>
+        <div class="count" id="count"></div>
+        <div class="total-label">TOTAL</div>
+        <div class="total" id="total">$0.00</div>
+        <div class="gst" id="gst"></div>
       </div>
-      <ul id="items" class="items"></ul>
-    </div>
-    <aside class="summary">
-      <div class="shop" id="shop"></div>
-      <div class="count" id="count"></div>
-      <div class="total-label">TOTAL</div>
-      <div class="total" id="total">$0.00</div>
-      <div class="gst" id="gst"></div>
+
+      <!-- Clock, date and weather (same as the POS home screen) -->
+      <div class="side-info">
+        <div id="cTime" class="ctime">--:--</div>
+        <div id="cDate" class="cdate"></div>
+        <div id="cWeather" class="cweather" hidden>
+          <span id="cwIcon" class="cw-icon"></span>
+          <span class="cw-text">
+            <span class="cw-line"><b id="cwTemp"></b> <span id="cwDesc" class="cw-desc"></span></span>
+            <small id="cwPlace"></small>
+          </span>
+        </div>
+        <!-- Shown until the display is clicked once (needed to go full screen) -->
+        <div id="fsHint" class="fs-hint">Click anywhere for full screen</div>
+        <div id="noLink" class="no-link" hidden>Waiting for Pocket POS… open it in this browser and press 🖥 Customer display.</div>
+      </div>
     </aside>
-  </section>
+  </div>
 
-  <!-- After payment -->
-  <section id="thanks" class="screen thanks" hidden>
-    <div class="thanks-title">Thank you!</div>
-    <div class="thanks-rows">
-      <div class="trow"><span>Total</span><span id="tTotal"></span></div>
-      <div class="trow" id="tPaidRow"><span id="tPaidLabel">Paid</span><span id="tPaid"></span></div>
-      <div class="trow change" id="tChangeRow"><span>Change</span><span id="tChange"></span></div>
-    </div>
-  </section>
-
-  <!-- Bottom bar: clock, date and weather (same as the POS home screen) -->
-  <footer class="cbar">
-    <div class="cclock">
-      <div id="cTime" class="ctime">--:--</div>
-      <div id="cDate" class="cdate"></div>
-    </div>
-    <div id="cWeather" class="cweather" hidden>
-      <span id="cwIcon" class="cw-icon"></span>
-      <span class="cw-text">
-        <span class="cw-line"><b id="cwTemp"></b> <span id="cwDesc" class="cw-desc"></span></span>
-        <small id="cwPlace"></small>
-      </span>
-    </div>
-  </footer>
-
-  <!-- Shown until the display is clicked once (needed to go full screen) -->
-  <div id="fsHint" class="fs-hint">Click anywhere for full screen</div>
-  <div id="noLink" class="no-link" hidden>Waiting for Pocket POS… open it in this browser and press 🖥 Customer display.</div>
+  <!-- Test pattern: numbered stripes to find the damaged part (POS ☰ → Customer display layout) -->
+  <div id="testPattern" class="test-pattern" hidden></div>
 
   <script type="module" src="/js/customer.js"></script>
 </body>

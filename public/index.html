@@ -228,6 +228,7 @@
       <button class="btn btn-wide" type="button" id="receiptSetBtn">🧾 Receipt &amp; cash drawer settings</button>
       <button class="btn btn-wide" type="button" id="reprintBtn">🖨 Reprint last receipt</button>
       <button class="btn btn-wide" type="button" id="custDisplayBtn">🖥 Open customer display</button>
+      <button class="btn btn-wide" type="button" id="cdLayoutBtn">📐 Customer display layout</button>
     </section>
 
     <!-- 4. Products & sync -->
@@ -254,7 +255,7 @@
     </section>
 
     <div class="sheet-actions"><button class="btn btn-primary btn-xl" type="button" data-close>Close</button></div>
-    <p class="credit">Hoxton Park Grocery Store POS · Developed by Manish (Ekraj) Ghimire</p>
+    <p class="credit">Pocket POS · Developed by Manish Ghimire</p>
   </div>
 
   <!-- Weather location (saved on this device) -->
@@ -269,6 +270,20 @@
     <div class="sheet-actions">
       <button class="btn" type="button" data-close>Close</button>
       <button class="btn btn-primary btn-xl" type="submit">Search</button>
+    </div>
+  </form>
+
+  <!-- Customer display layout: keep content out of a damaged part of that screen -->
+  <form id="cdSheet" class="sheet" hidden autocomplete="off">
+    <h2>Customer display layout</h2>
+    <p class="hint">If part of the customer screen is damaged (always black), Pocket POS keeps everything out of it. Open the customer display first (🖥).</p>
+    <label class="toggle"><input type="checkbox" id="cdOn"> Avoid a damaged area</label>
+    <label class="toggle"><input type="checkbox" id="cdTest"> Show test pattern on the customer screen</label>
+    <p class="hint">The test pattern shows numbered stripes 0 to 95 across the customer screen. Select the numbers you <b>can't</b> see there.</p>
+    <div id="cdCols" class="cd-cols"></div>
+    <p id="cdInfo" class="hint"></p>
+    <div class="sheet-actions">
+      <button class="btn btn-primary btn-xl" type="button" data-close>Done</button>
     </div>
   </form>
 

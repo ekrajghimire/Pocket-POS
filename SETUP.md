@@ -210,11 +210,14 @@ A second monitor plugged into the POS computer can show the customer each item, 
 
 The shop name comes from ☰ → Receipt settings. The display only shows information and can't change anything. It must be open in the same browser on the same computer as the POS. If it's closed by accident, press 🖥 again; it picks up the current sale straight away. If the pop-up is blocked, click the blocked-pop-up icon in the address bar → **Always allow**.
 
-**Parts of the customer screen go black?** This is a known Edge/Chrome drawing problem on some POS terminals, where the customer screen is a second monitor with different scaling or a basic graphics chip. Pocket POS now redraws the customer display every 10 seconds and whenever the window or screen changes, which clears it on its own. If black patches still appear:
+**Damaged customer screen (a part that is always black)?** Pocket POS can keep everything out of it:
 
-1. In Edge open `edge://settings/system` (Chrome: `chrome://settings/system`), turn **off** "Use graphics acceleration when available", and click **Restart**.
-2. In Windows **Settings → System → Display**, select the customer screen and set **Scale** to the same value as the main screen (e.g. both 100%).
-3. Keep the customer display full screen (click it once): full screen redraws more reliably than a window.
+1. Open the customer display (🖥), then on the POS go to ☰ → **Customer display layout**.
+2. Tick **Show test pattern on the customer screen**. The customer screen shows yellow and white stripes numbered 0 to 95 from left to right, each 5% of the width.
+3. Select the numbers you **can't** see on the customer screen (the black part). Select one extra on each side if a stripe is half hidden.
+4. Tap **Done**. The test pattern disappears and the display splits into two columns either side of the damaged part: the items, welcome and "Thank you" on the wider side; the total, clock, date and weather on the other. The damaged part stays black.
+
+It starts set to 45–65%, which matches the screen this was built for. Untick **Avoid a damaged area** to use the whole screen again (e.g. after the monitor is replaced). The setting is saved on that PC.
 
 ## 12. Weather on the home screen
 
@@ -256,7 +259,7 @@ To run the automated tests on your Mac: `npm test` (no setup needed; Google is s
 | `Google auth failed` | `GOOGLE_SERVICE_ACCOUNT_JSON` must be the whole file contents, unmodified. |
 | `PASSWORD_HASH is not set` / can't log in | Add the env vars in Vercel and **redeploy**. |
 | "Too many attempts" | 5 wrong passwords in 15 minutes locks that IP for 15 minutes. |
-| Customer display partly or fully black | Turn off graphics acceleration in Edge/Chrome (`edge://settings/system`), restart the browser, and match the scaling of both screens. See section 11. |
+| Text on the customer display falls into a black part of the screen | ☰ → Customer display layout → show the test pattern and select the stripes you can't see (section 11). |
 | Barcode lost its leading zero | Format the sheet's barcode column as Plain text and re-type it. |
 | App shows old version after a deploy | Close and reopen the app (updates load in the background), or bump `VERSION` in `public/sw.js`. |
 | Scanning seems slow on iPhone | iOS Safari has no native barcode detector, so the app uses ZXing (software). Keep the barcode inside the box, about 10–20 cm away, and use good light. |

@@ -13,42 +13,47 @@ let lastStateAt = 0;
 
 function show(id) {
   for (const s of ['idle', 'live', 'thanks']) $(s).hidden = s !== id;
-  repaint();
+  // The side column shows the running total while scanning, otherwise a big clock.
+  $('summary').hidden = id !== 'live';
+  $('side').classList.toggle('calm', id !== 'live');
 }
 
-// ---- Black-screen guard ----
-// On some Windows POS terminals the customer screen is a second monitor with its own scaling
-// or a basic graphics chip. Edge can then leave parts of this window black (unpainted) until
-// something redraws them, and the idle screen rarely changes by itself. So we redraw the
-// WHOLE page whenever the window, screen or visibility changes, after every update, and with
-// every clock tick. The colour change is 1% and lasts 80 ms: nobody can see it.
-// Timers, not animation frames: Edge pauses animation frames for a window it thinks is hidden,
-// which is exactly when this guard is needed.
-let repaintTimer = null;
-function repaint() {
-  if (repaintTimer) return;
-  document.body.classList.add('repaint');
-  repaintTimer = setTimeout(() => { document.body.classList.remove('repaint'); repaintTimer = null; }, 80);
+// ---- Layout around a damaged part of the screen ----
+// Set on the POS (☰ → Customer display layout) and shared through localStorage:
+// {on, cols:[45,50,…], test}. Each number is a 5%-wide stripe of the screen, counted from the
+// left, that is black on this monitor. Nothing is drawn there: the content is split into a
+// main column and a side column on either side of it, the main one on the wider side.
+const LAYOUT_KEY = 'pos_cdisplay_v1';
+const DEFAULT_LAYOUT = { on: true, cols: [45, 50, 55, 60], test: false };
+function readLayout() {
+  const v = readLS(LAYOUT_KEY);
+  return v && typeof v === 'object' ? { ...DEFAULT_LAYOUT, ...v } : { ...DEFAULT_LAYOUT };
 }
-// Resizing the window by one pixel and back makes Windows hand Edge a fresh drawing surface,
-// which clears black areas left over from moving the window between screens. Only possible
-// for the window Pocket POS opened, and not while it is full screen.
-function nudgeWindow() {
-  if (document.fullscreenElement || !window.opener) return;
-  try { window.resizeBy(1, 0); setTimeout(() => { try { window.resizeBy(-1, 0); } catch { /* not allowed */ } repaint(); }, 120); }
-  catch { /* not allowed */ }
+function applyLayout() {
+  const cfg = readLayout();
+  const cols = (Array.isArray(cfg.cols) ? cfg.cols : []).map(Number).filter((n) => Number.isInteger(n) && n >= 0 && n <= 95 && n % 5 === 0);
+  const stage = $('stage');
+  let left = 64, dead = 0, right = 36, flip = false;
+  if (cfg.on && cols.length) {
+    const from = Math.min(...cols), to = Math.max(...cols) + 5;   // the whole damaged band, in %
+    left = from; dead = to - from; right = 100 - to;
+    flip = right > left;                                            // main content on the wider side
+  }
+  stage.style.gridTemplateColumns = `${left}% ${dead}% ${right}%`;
+  stage.classList.toggle('flip', flip);
+  stage.classList.toggle('has-dead', dead > 0);
+  // Test pattern
+  const tp = $('testPattern');
+  if (cfg.test && !tp.childElementCount) {
+    for (let i = 0; i < 20; i++) {
+      const s = document.createElement('div');
+      s.className = 'stripe';
+      for (let k = 0; k < 3; k++) { const n = document.createElement('span'); n.textContent = String(i * 5); s.append(n); }
+      tp.append(s);
+    }
+  }
+  tp.hidden = !cfg.test;
 }
-let resizeTimer = null;
-window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(repaint, 150); });
-document.addEventListener('visibilitychange', () => { if (!document.hidden) repaint(); });
-window.addEventListener('focus', repaint);
-window.addEventListener('pageshow', repaint);
-// Moved to a screen with different scaling (devicePixelRatio changes)
-(function watchScale() {
-  const mq = matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`);
-  mq.addEventListener('change', () => { repaint(); nudgeWindow(); watchScale(); }, { once: true });
-})();
-window.addEventListener('load', () => setTimeout(nudgeWindow, 800));
 
 function renderState(st) {
   lastStateAt = Date.now();
@@ -64,7 +69,7 @@ function renderState(st) {
     <li class="${l.key === st.highlight ? 'new' : ''}">
       <span class="name">${esc(l.name)}</span>
       <span class="c">${esc(l.qty)}</span>
-      <span class="r">${esc(l.unit)}${l.was ? `<s>${esc(l.was)}</s>` : ''}</span>
+      <span class="r price">${esc(l.unit)}${l.was ? `<s>${esc(l.was)}</s>` : ''}</span>
       <span class="r strong">${esc(l.total)}</span>
     </li>`).join('');
   $('count').textContent = `${st.count} item${st.count === 1 ? '' : 's'}`;
@@ -111,7 +116,6 @@ function tickClock() {
   $('cDate').textContent = now.toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 }
 function renderWeather() {
-  repaint();
   const loc = readLS('pos_weather_loc_v1');
   const w = readLS('pos_weather_last_v1');
   const show = loc && !loc.off && w && Number.isFinite(w.temp);
@@ -123,10 +127,12 @@ function renderWeather() {
   $('cwPlace').textContent = Number.isFinite(w.hi) ? `${loc.name} · ${w.hi}°/${w.lo}°` : loc.name;
 }
 tickClock();
-setInterval(() => { tickClock(); repaint(); }, 10000);
+setInterval(tickClock, 10000);
 renderWeather();
+applyLayout();
 window.addEventListener('storage', (e) => {
   if (e.key === 'pos_weather_loc_v1' || e.key === 'pos_weather_last_v1') renderWeather();
+  if (e.key === LAYOUT_KEY) applyLayout();
 });
 
 // Full screen needs one click in this window (browser rule).
@@ -136,10 +142,5 @@ function goFullscreen() {
   }
 }
 document.addEventListener('click', goFullscreen);
-document.addEventListener('fullscreenchange', () => {
-  $('fsHint').hidden = !!document.fullscreenElement;
-  repaint();
-  setTimeout(repaint, 300);   // again once the screen has settled
-  if (!document.fullscreenElement) setTimeout(nudgeWindow, 300);
-});
+document.addEventListener('fullscreenchange', () => { $('fsHint').hidden = !!document.fullscreenElement; });
 if (!document.documentElement.requestFullscreen) $('fsHint').hidden = true;

@@ -1,7 +1,7 @@
 // sw.js — service worker: caches the app shell so the POS opens instantly and works offline.
 // Bump VERSION when you change files and want phones to pick them up sooner
 // (they also update in the background on the next launch).
-const VERSION = 'pos-v24';
+const VERSION = 'pos-v25';
 const SHELL = [
   '/', '/index.html', '/css/app.css', '/manifest.webmanifest',
   '/js/app.js', '/js/theme.js', '/js/infobar.js', '/js/weather-icons.js', '/js/scanner.js', '/js/zxing-worker.js', '/js/store.js', '/js/cart.js', '/js/feedback.js', '/js/receipt.js',

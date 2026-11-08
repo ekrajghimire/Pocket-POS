@@ -25,42 +25,69 @@ html[data-theme="light"][data-accent="blue"] {
 html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); overflow: hidden; cursor: default; }
 body { font: 2.4vh/1.25 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
 [hidden] { display: none !important; }
-/* Black-screen guard (customer.js): a 1% colour change for 80 ms forces a full redraw */
-body.repaint { background: color-mix(in srgb, var(--bg) 99%, #808080); }
-.screen { position: absolute; inset: 0 0 var(--cbar-h) 0; }
-:root { --cbar-h: 11vh; }
 
-/* Bottom bar: clock, date, weather */
-.cbar {
-  position: absolute; left: 0; right: 0; bottom: 0; height: var(--cbar-h);
-  display: flex; align-items: center; justify-content: space-between; gap: 3vw; padding: 0 2.5vw;
-  border-top: 2px solid var(--line); background: var(--panel);
+/* ---- Columns: main | dead | side ----
+   customer.js sets grid-template-columns from the "damaged area" setting, and .flip puts
+   the main column on the right when that side of the screen is wider. Nothing is ever drawn
+   in the dead column. */
+.stage {
+  position: fixed; inset: 0; display: grid;
+  grid-template-columns: 64% 0% 36%; grid-template-areas: "main dead side";
 }
-.ctime { font-size: 5.2vh; font-weight: 900; line-height: 1; letter-spacing: -1px; font-variant-numeric: tabular-nums; }
-.cdate { font-size: 2.3vh; font-weight: 700; color: var(--muted); margin-top: .4vh; }
-.cweather { display: flex; align-items: center; gap: 1.2vw; min-width: 0; }
-.cw-icon { font-size: 6vh; line-height: 1; }
+.stage.flip { grid-template-areas: "side dead main"; }
+.col { min-width: 0; min-height: 0; overflow: hidden; container-type: inline-size; }
+.main { grid-area: main; position: relative; }
+.dead { grid-area: dead; background: #000; }
+.side {
+  grid-area: side; display: flex; flex-direction: column; background: var(--panel);
+  border-left: 2px solid var(--line);
+}
+.stage.flip .side { border-left: 0; border-right: 2px solid var(--line); }
+.stage.has-dead .side { border-left: 0; border-right: 0; }
+.screen { position: absolute; inset: 0; }
+
+/* ---- Side column: total while scanning, clock + date + weather underneath ---- */
+.summary {
+  flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 1vh;
+  padding: 4vh 6cqw 2vh; min-height: 0;
+}
+.shop { font-size: 3.2vh; font-weight: 800; color: var(--muted); overflow-wrap: anywhere; }
+.count { font-size: 3vh; color: var(--muted); margin-bottom: 3vh; }
+.total-label { font-size: 3.4vh; font-weight: 800; letter-spacing: 2px; color: var(--accent); }
+.total { font-size: min(13vh, 17cqw); font-weight: 900; line-height: 1; letter-spacing: -2px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.gst { font-size: 2.6vh; color: var(--muted); margin-top: 1vh; }
+
+.side-info {
+  display: flex; flex-direction: column; gap: .6vh; padding: 2.5vh 6cqw 3vh;
+  border-top: 2px solid var(--line);
+}
+.side.calm .side-info { flex: 1; justify-content: center; border-top: 0; gap: 1.2vh; }
+.ctime { font-size: min(7vh, 16cqw); font-weight: 900; line-height: 1; letter-spacing: -1px; font-variant-numeric: tabular-nums; }
+.side.calm .ctime { font-size: min(12vh, 17cqw); white-space: nowrap; }
+.cdate { font-size: min(2.6vh, 6cqw); font-weight: 700; color: var(--muted); }
+.side.calm .cdate { font-size: min(3.2vh, 7cqw); }
+.cweather { display: flex; align-items: center; gap: 3cqw; min-width: 0; margin-top: 1vh; }
+.cw-icon { font-size: min(6vh, 14cqw); line-height: 1; }
 .cw-text { display: flex; flex-direction: column; min-width: 0; }
-.cw-line { white-space: nowrap; }
-.cw-line b { font-size: 4.4vh; font-weight: 900; }
-.cw-desc { font-size: 2.4vh; font-weight: 700; color: var(--muted); }
-.cweather small { font-size: 2.2vh; font-weight: 700; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cw-line { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cw-line b { font-size: min(4.4vh, 11cqw); font-weight: 900; }
+.cw-desc { font-size: min(2.4vh, 5.5cqw); font-weight: 700; color: var(--muted); }
+.cweather small { font-size: min(2.2vh, 5cqw); font-weight: 700; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-/* Idle */
-.idle { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2vh; text-align: center; padding: 4vw; }
-.idle-shop { font-size: 9vh; font-weight: 900; letter-spacing: -1px; }
-.idle-sub { font-size: 3.2vh; color: var(--muted); }
+/* ---- Idle ---- */
+.idle { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2vh; text-align: center; padding: 4vh 5cqw; }
+.idle-shop { font-size: min(9vh, 12cqw); font-weight: 900; letter-spacing: -1px; line-height: 1.1; overflow-wrap: anywhere; }
+.idle-sub { font-size: min(3.2vh, 5.5cqw); color: var(--muted); }
 
-/* Live cart: items on the left, total on the right */
-.live { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); }
-.items-wrap { display: flex; flex-direction: column; min-height: 0; padding: 3vh 2.5vw; }
+/* ---- Live cart: the items ---- */
+.live { display: flex; flex-direction: column; padding: 3vh 3cqw; }
 .items-head, .items li {
-  display: grid; grid-template-columns: minmax(0, 1fr) 4ch 9ch 10ch; gap: 1.2vw; align-items: baseline;
+  display: grid; grid-template-columns: minmax(0, 1fr) 4ch 9ch 10ch; gap: 1.5cqw; align-items: baseline;
 }
 .items-head { color: var(--muted); font-size: 2.2vh; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
-  padding: 0 1vw 1.2vh; border-bottom: 2px solid var(--line); }
+  padding: 0 1.5cqw 1.2vh; border-bottom: 2px solid var(--line); }
 .items { list-style: none; margin: 0; padding: 0; overflow: hidden; flex: 1; min-height: 0; }
-.items li { padding: 1.5vh 1vw; border-bottom: 1px solid var(--line); font-size: 3.2vh; font-variant-numeric: tabular-nums; }
+.items li { padding: 1.5vh 1.5cqw; border-bottom: 1px solid var(--line); font-size: 3.2vh; font-variant-numeric: tabular-nums; }
 .items li.new { background: var(--new-bg); animation: flash 1.2s ease-out; }
 @keyframes flash { from { background: var(--new-flash); } }
 /* long names wrap onto a second line instead of being cut off */
@@ -69,34 +96,31 @@ body.repaint { background: color-mix(in srgb, var(--bg) 99%, #808080); }
 .c { text-align: center; }
 .r { text-align: right; white-space: nowrap; }
 .strong { font-weight: 800; }
-
-.summary {
-  display: flex; flex-direction: column; justify-content: center; gap: 1vh; padding: 4vh 3vw;
-  background: var(--panel); border-left: 2px solid var(--line);
+/* A narrow main column drops the unit-price column (the line total stays) */
+@container (max-width: 520px) {
+  .items-head, .items li { grid-template-columns: minmax(0, 1fr) 4ch 10ch; }
+  .items-head .price, .items li .price { display: none; }
 }
-.shop { font-size: 3.2vh; font-weight: 800; color: var(--muted); }
-.count { font-size: 3vh; color: var(--muted); margin-bottom: 3vh; }
-.total-label { font-size: 3.4vh; font-weight: 800; letter-spacing: 2px; color: var(--accent); }
-.total { font-size: min(13vh, 5.2vw); font-weight: 900; line-height: 1; letter-spacing: -2px; font-variant-numeric: tabular-nums; }
-.gst { font-size: 2.6vh; color: var(--muted); margin-top: 1vh; }
 
-/* Thank you + change */
-.thanks { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5vh; }
-.thanks-title { font-size: 11vh; font-weight: 900; color: var(--accent); }
-.thanks-rows { min-width: 50vw; font-size: 5vh; font-variant-numeric: tabular-nums; }
-.trow { display: flex; justify-content: space-between; gap: 4vw; padding: 1.2vh 0; border-bottom: 1px solid var(--line); }
+/* ---- Thank you + change ---- */
+.thanks { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5vh; padding: 3vh 5cqw; }
+.thanks-title { font-size: min(11vh, 14cqw); font-weight: 900; color: var(--accent); text-align: center; }
+.thanks-rows { width: 100%; max-width: 90cqw; font-size: min(5vh, 7cqw); font-variant-numeric: tabular-nums; }
+.trow { display: flex; justify-content: space-between; gap: 4cqw; padding: 1.2vh 0; border-bottom: 1px solid var(--line); }
 .trow.change { font-size: 1.5em; font-weight: 900; color: var(--accent); border-bottom: 0; }
 
+/* ---- Messages: inside the side column, never across the screen ---- */
 .fs-hint, .no-link {
-  position: fixed; left: 50%; top: 2vh; z-index: 5; transform: translateX(-50%); padding: 1vh 2vw; border-radius: 1vh;
-  background: var(--hint-bg); color: var(--muted); font-size: 2vh;
+  margin-top: 1.5vh; padding: 1vh 3cqw; border-radius: 1vh; background: var(--hint-bg);
+  color: var(--muted); font-size: min(2vh, 4.5cqw); text-align: center;
 }
 .no-link { color: #ffb020; }
-/* the full-screen hint sits in the middle of the bottom bar, between clock and weather */
-.fs-hint { top: auto; bottom: calc(var(--cbar-h) / 2); transform: translate(-50%, 50%); }
 
-/* Portrait screens: stack total under the items */
-@media (orientation: portrait) {
-  .live { grid-template-columns: 1fr; grid-template-rows: minmax(0, 1fr) auto; }
-  .summary { border-left: 0; border-top: 2px solid var(--line); }
+/* ---- Test pattern: 20 numbered stripes, each 5% of the width ---- */
+.test-pattern { position: fixed; inset: 0; z-index: 10; display: flex; background: #000; }
+.test-pattern .stripe {
+  flex: 1; display: flex; flex-direction: column; justify-content: space-between; align-items: center;
+  padding: 2vh 0; font: 900 4.5vh/1 "Segoe UI", Arial, sans-serif; color: #000; border-right: 1px solid #000;
 }
+.test-pattern .stripe:nth-child(odd) { background: #ffd400; }
+.test-pattern .stripe:nth-child(even) { background: #ffffff; }

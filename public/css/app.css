@@ -329,6 +329,13 @@ input[readonly] { opacity: .65; }
 .swatch { display: inline-block; width: 14px; height: 14px; border-radius: 50%; vertical-align: -1px; margin-right: 4px; border: 2px solid rgba(255,255,255,.6); }
 .swatch.green { background: #19e36b; }
 .swatch.blue { background: #2f7bff; }
+.cd-cols { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 6px; margin: 8px 0 4px; }
+.cd-cols button {
+  min-height: 46px; border-radius: 10px; border: 2px solid var(--line); background: var(--panel-2);
+  color: var(--text); font: inherit; font-size: 16px; font-weight: 800; padding: 0;
+}
+.cd-cols button.on { background: var(--invert-bg); color: var(--invert-text); border-color: var(--invert-bg); }
+.cd-cols.off { opacity: .45; }
 .segmented button.on { background: var(--invert-bg); color: var(--invert-text); border-color: var(--invert-bg); }
 .quick-cash { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 .quick-cash button {

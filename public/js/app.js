@@ -390,6 +390,48 @@ async function showCustomerDisplay() {
 $('custBtn').addEventListener('click', showCustomerDisplay);
 $('custDisplayBtn').addEventListener('click', () => { closeSheets(); showCustomerDisplay(); });
 
+// ---- Customer display layout (a damaged part of the customer screen) ----
+// Saved in localStorage, which the customer display window (same browser) reads and watches.
+// cols = the 5%-wide stripes, counted from the left, that are black on that monitor.
+const CD_KEY = 'pos_cdisplay_v1';
+const CD_DEFAULT = { on: true, cols: [45, 50, 55, 60], test: false };
+function readCd() {
+  try { return { ...CD_DEFAULT, ...(JSON.parse(localStorage.getItem(CD_KEY)) || {}) }; } catch { return { ...CD_DEFAULT }; }
+}
+function saveCd(cfg) {
+  try { localStorage.setItem(CD_KEY, JSON.stringify(cfg)); } catch { /* storage blocked */ }
+  renderCd();
+}
+function renderCd() {
+  const cfg = readCd();
+  $('cdOn').checked = !!cfg.on;
+  $('cdTest').checked = !!cfg.test;
+  const box = $('cdCols');
+  if (!box.childElementCount) {
+    for (let n = 0; n < 100; n += 5) {
+      const b = document.createElement('button');
+      b.type = 'button'; b.dataset.col = String(n); b.textContent = String(n);
+      box.append(b);
+    }
+  }
+  for (const b of box.children) b.classList.toggle('on', cfg.cols.includes(Number(b.dataset.col)));
+  box.classList.toggle('off', !cfg.on);
+  if (!cfg.on || !cfg.cols.length) { $('cdInfo').textContent = 'The whole customer screen is used.'; return; }
+  const from = Math.min(...cfg.cols), to = Math.max(...cfg.cols) + 5;
+  $('cdInfo').textContent = `Kept clear: ${from}% to ${to}% across the screen, counted from the left.`;
+}
+function stopTestPattern() { const c = readCd(); if (c.test) saveCd({ ...c, test: false }); }
+$('cdLayoutBtn').addEventListener('click', () => { renderCd(); openSheet('cdSheet'); });
+$('cdOn').addEventListener('change', () => saveCd({ ...readCd(), on: $('cdOn').checked }));
+$('cdTest').addEventListener('change', () => saveCd({ ...readCd(), test: $('cdTest').checked }));
+$('cdCols').addEventListener('click', (e) => {
+  const b = e.target.closest('button[data-col]');
+  if (!b) return;
+  const n = Number(b.dataset.col), c = readCd();
+  const cols = c.cols.includes(n) ? c.cols.filter((x) => x !== n) : [...c.cols, n].sort((a, z) => a - z);
+  saveCd({ ...c, cols, on: cols.length ? true : c.on });
+});
+
 function gstText(t) {
   if (!settings.gstEnabled) return '';
   return settings.pricesIncludeGst ? `Incl. GST ${money(t.gst)}` : `Subtotal ${money(t.subtotal)} + GST ${money(t.gst)}`;
@@ -425,7 +467,7 @@ $('clearBtn').addEventListener('click', () => {
 // =============================================================================================
 // Bottom sheets
 // =============================================================================================
-const SHEETS = ['newProductSheet', 'editSheet', 'manualItemSheet', 'checkoutSheet', 'settingsSheet', 'receiptSheet', 'weatherSheet'];
+const SHEETS = ['newProductSheet', 'editSheet', 'manualItemSheet', 'checkoutSheet', 'settingsSheet', 'receiptSheet', 'weatherSheet', 'cdSheet'];
 const anySheetOpen = () => SHEETS.some((id) => !$(id).hidden);
 
 function openSheet(id) {
@@ -435,6 +477,7 @@ function openSheet(id) {
 }
 
 function closeSheets() {
+  if (!$('cdSheet').hidden) stopTestPattern();
   SHEETS.forEach((s) => { $(s).hidden = true; });
   $('sheetBackdrop').hidden = true;
   document.activeElement && document.activeElement.blur();
