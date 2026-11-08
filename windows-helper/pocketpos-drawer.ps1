@@ -159,6 +159,9 @@ while ($true) {
   } catch {
     Write-Host "$(Get-Date -Format T)  $($_.Exception.Message)" -ForegroundColor Red
   } finally {
+    # Close politely: finish sending the reply first, so the browser always receives all of it.
+    try { $client.Client.Shutdown([System.Net.Sockets.SocketShutdown]::Send) } catch { }
+    Start-Sleep -Milliseconds 30
     $client.Close()
   }
 }

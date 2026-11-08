@@ -140,8 +140,13 @@ async function callHelper(path, method = 'GET') {
   try {
     // targetAddressSpace tells Chrome this is a request to this computer (local network access).
     const res = await fetch(HELPER_URL + path, { method, signal: ctrl.signal, cache: 'no-store', targetAddressSpace: 'loopback' });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok || !data.ok) throw new Error(data.error || `Helper replied ${res.status}`);
+    if (!res.ok) {
+      const bad = await res.json().catch(() => ({}));
+      throw new Error(bad.error || `Drawer Helper error ${res.status}`);
+    }
+    // A 2xx reply means the helper did the job, even if the rest of its reply got cut short.
+    const data = await res.json().catch(() => ({ ok: true }));
+    if (data.ok === false) throw new Error(data.error || 'Drawer Helper reported a problem');
     return data;
   } catch (err) {
     if (err.name === 'AbortError' || err instanceof TypeError) {
@@ -157,17 +162,16 @@ async function callHelper(path, method = 'GET') {
 export const checkHelper = () => callHelper('/status');
 
 /**
- * Open the drawer. Resolves to how it was opened: 'helper', 'slip' or 'failed'.
- * With the helper, nothing prints; if the helper can't be reached and `fallback` is true,
- * a slip is printed instead so the drawer still opens.
+ * Open the drawer. Resolves to 'helper', 'slip' or 'failed'.
+ *  - Helper mode: the Drawer Helper opens it and NOTHING is printed. If the helper can't be
+ *    reached we report it (onError) and print nothing: with the printer driver's drawer
+ *    option off, a slip wouldn't open the drawer anyway.
+ *  - Print mode: prints a short slip; the printer driver opens the drawer as it prints.
  */
-export async function openDrawer(reason = 'NO SALE', sale = null, { fallback = true, onError = () => {} } = {}) {
+export async function openDrawer(reason = 'NO SALE', sale = null, { onError = () => {} } = {}) {
   if (receiptSettings.drawerMethod === 'helper') {
     try { await callHelper('/open', 'POST'); return 'helper'; }
-    catch (err) {
-      onError(err);
-      if (!fallback) return 'failed';
-    }
+    catch (err) { onError(err); return 'failed'; }
   }
   await printDrawerSlip(reason, sale);
   return 'slip';

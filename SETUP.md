@@ -195,9 +195,9 @@ The **Drawer Helper** is a small program in the `windows-helper` folder. It runs
 4. Double-click **Start Pocket POS Drawer.cmd**. If Windows says "Windows protected your PC", click **More info → Run anyway**. A window shows **"Drawer Helper is running"**. Leave it open; you can minimise it.
 5. In Pocket POS, tap **Check Drawer Helper**, then **Test: open drawer**. If Chrome asks to let the site **access other apps and services on this device**, click **Allow**.
 6. **Start it automatically:** press Win + R, type `shell:startup` and press Enter. Put a shortcut to `Start Pocket POS Drawer.cmd` in the folder that opens.
-7. Optional: set the printer driver's CashDrawer option (step 3 above) back to **Don't open**. Card-sale receipts will then stop popping the drawer, and Pocket POS opens it itself for cash sales.
+7. **Important:** set the printer driver's CashDrawer option (step 3 above) back to **Don't open** (XP-80C: Printing preferences → Print Settings → CashDrawer). Otherwise **every** print, including receipts and reprints, also pops the drawer. With it off, the drawer opens only on **cash sales** and the **💰 button / F9**.
 
-If the helper isn't running, Pocket POS shows a warning and prints a slip instead, so the drawer still opens. If the drawer doesn't open but the helper says "Drawer opened", change `POS_PIN` to `2` or `5` in the .cmd file and restart it.
+If the helper isn't running, Pocket POS shows a warning ("Drawer didn't open…"). Start the helper, or open the drawer with its key. If the drawer doesn't open but the helper says "Drawer opened", change `POS_PIN` to `2` or `5` in the .cmd file and restart it.
 
 ## 11. Customer display (second screen)
 

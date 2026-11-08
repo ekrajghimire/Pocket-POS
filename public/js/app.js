@@ -671,7 +671,7 @@ $('checkoutSheet').addEventListener('submit', (e) => {
   if (receiptSettings.drawerMethod === 'helper') {
     // Helper opens the drawer (no paper); the receipt prints separately if wanted.
     if (popDrawer) {
-      openDrawer('CASH SALE', sale, { fallback: !wantPrint, onError: (err) => toast(drawerErrorText(err), true, 4500) });
+      openDrawer('CASH SALE', sale, { onError: (err) => toast(drawerErrorText(err), true, 5000) });
     }
     if (wantPrint) printReceipt(sale);
   } else if (wantPrint) {
@@ -833,7 +833,7 @@ function readReceiptForm() {
 function updateDrawerButton() { $('drawerBtn').hidden = !receiptSettings.drawerEnabled; }
 
 function drawerErrorText(err) {
-  return `${err.message}. Printing a slip instead — start "Start Pocket POS Drawer" on this PC.`;
+  return `Drawer didn't open: ${err.message}. Start "Start Pocket POS Drawer" on this PC, or use the drawer key.`;
 }
 
 async function noSale() {

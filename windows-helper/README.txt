@@ -15,5 +15,6 @@ Start it automatically with Windows:
    Press Win+R, type  shell:startup  and press Enter. Right-click "Start Pocket POS Drawer.cmd" >
    Create shortcut, and move the shortcut into that Startup folder.
 
-Once the helper works, you can turn the printer driver's "Open drawer before printing" back to
-"Don't open", so card-sale receipts no longer pop the drawer. Pocket POS opens it for cash sales.
+IMPORTANT: once the helper works, set the printer driver's CashDrawer option back to
+"Don't open" (XP-80C: Printing preferences > Print Settings > CashDrawer). Otherwise every
+print (receipts, reprints) also pops the drawer. Pocket POS opens it for cash sales and the $ button.
