@@ -393,8 +393,8 @@ $('custDisplayBtn').addEventListener('click', () => { closeSheets(); showCustome
 // ---- Customer display layout (a damaged part of the customer screen) ----
 // Saved in localStorage, which the customer display window (same browser) reads and watches.
 // cols = the 5%-wide stripes, counted from the left, that are black on that monitor.
-const CD_KEY = 'pos_cdisplay_v1';
-const CD_DEFAULT = { on: true, cols: [45, 50, 55, 60], test: false };
+const CD_KEY = 'pos_cdisplay_v2';   // v2: default measured on the shop's screen (40–65%)
+const CD_DEFAULT = { on: true, cols: [40, 45, 50, 55, 60], test: false };
 function readCd() {
   try { return { ...CD_DEFAULT, ...(JSON.parse(localStorage.getItem(CD_KEY)) || {}) }; } catch { return { ...CD_DEFAULT }; }
 }

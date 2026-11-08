@@ -23,8 +23,11 @@ function show(id) {
 // {on, cols:[45,50,…], test}. Each number is a 5%-wide stripe of the screen, counted from the
 // left, that is black on this monitor. Nothing is drawn there: the content is split into a
 // main column and a side column on either side of it, the main one on the wider side.
-const LAYOUT_KEY = 'pos_cdisplay_v1';
-const DEFAULT_LAYOUT = { on: true, cols: [45, 50, 55, 60], test: false };
+const LAYOUT_KEY = 'pos_cdisplay_v2';
+const DEFAULT_LAYOUT = { on: true, cols: [40, 45, 50, 55, 60], test: false };
+// Extra black on each side of the damaged band (% of the width): the edge of the damage is
+// rarely exactly on a 5% line, and text that touches it gets cut off.
+const SAFETY = 2;
 function readLayout() {
   const v = readLS(LAYOUT_KEY);
   return v && typeof v === 'object' ? { ...DEFAULT_LAYOUT, ...v } : { ...DEFAULT_LAYOUT };
@@ -36,7 +39,9 @@ function applyLayout() {
   let left = 64, dead = 0, right = 36, flip = false;
   if (cfg.on && cols.length) {
     const from = Math.min(...cols), to = Math.max(...cols) + 5;   // the whole damaged band, in %
-    left = from; dead = to - from; right = 100 - to;
+    left = Math.max(0, from - (from > 0 ? SAFETY : 0));
+    right = Math.max(0, 100 - to - (to < 100 ? SAFETY : 0));
+    dead = 100 - left - right;
     flip = right > left;                                            // main content on the wider side
   }
   stage.style.gridTemplateColumns = `${left}% ${dead}% ${right}%`;

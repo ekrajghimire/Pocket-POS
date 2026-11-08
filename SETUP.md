@@ -221,7 +221,7 @@ The shop name comes from ☰ → Receipt settings. The display only shows inform
 3. Select the numbers you **can't** see on the customer screen (the black part). Select one extra on each side if a stripe is half hidden.
 4. Tap **Done**. The test pattern disappears and the display splits into two columns either side of the damaged part: the items, welcome and "Thank you" on the wider side; the total, clock, date and weather on the other. The damaged part stays black.
 
-It starts set to 45–65%, which matches the screen this was built for. Untick **Avoid a damaged area** to use the whole screen again (e.g. after the monitor is replaced). The setting is saved on that PC.
+It starts set to 40–65%, measured on the shop's screen, and Pocket POS keeps an extra 2% clear on each side because the edge of the damage rarely falls exactly on a stripe line. Untick **Avoid a damaged area** to use the whole screen again (e.g. after the monitor is replaced). The setting is saved on that PC.
 
 ## 12. Weather on the home screen
 
