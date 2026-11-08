@@ -51,6 +51,12 @@ async function handle(req, res) {
   const url = new URL(req.url, 'http://localhost');
 
   // --- API routes ---
+  // Vercel Web Analytics only runs on Vercel. Locally, answer with an empty script so the
+  // browser console stays clean.
+  if (url.pathname === '/_vercel/insights/script.js') {
+    res.setHeader('Content-Type', 'text/javascript; charset=utf-8');
+    return res.end('// Vercel Web Analytics is not available on the local dev server.\n');
+  }
   if (url.pathname.startsWith('/api/')) {
     const name = url.pathname.slice(5).replace(/\/$/, '');
     const file = path.join(ROOT, 'api', `${name}.js`);

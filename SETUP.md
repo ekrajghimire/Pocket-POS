@@ -127,6 +127,10 @@ npx vercel --prod
 
 > Preview URLs (the long ones with random letters) sit behind Vercel's own login by default. Use the production URL or your domain.
 
+### Visitor analytics (optional)
+
+The app already includes Vercel Web Analytics (page views, no cookies, nothing about sales or products). To switch it on: Vercel → your project → **Analytics** → **Enable**, then redeploy. Data shows in that Analytics tab after the next visits. Until it's enabled the app works exactly the same.
+
 ## 7. Connect your domain
 
 1. **Vercel → project → Settings → Domains → Add**. Enter the address you want, for example `pos.yourdomain.com` (a subdomain is easiest) or `yourdomain.com`.
