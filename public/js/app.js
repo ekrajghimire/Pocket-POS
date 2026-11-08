@@ -2,7 +2,7 @@
 
 import { Scanner } from './scanner.js';
 import { setStateProvider, publishCart, publishSale, openCustomerDisplay } from './display.js';
-import { startInfobar, searchPlaces, setWeatherLocation, useDeviceLocation, weatherLocation, isSetupNeeded } from './infobar.js';
+import { startInfobar, searchPlaces, setWeatherLocation, useDeviceLocation, weatherLocation } from './infobar.js';
 import { receiptSettings, saveReceiptSettings, printReceipt, rememberLastSale, lastSale, sampleSale, openDrawer, checkHelper } from './receipt.js';
 import { unlockAudio, beepOk, beepUnknown, beepSale } from './feedback.js';
 import {
@@ -687,9 +687,7 @@ function openWeatherSheet() {
   $('weatherSheet').reset();
   $('wxResults').innerHTML = '';
   const loc = weatherLocation();
-  $('wxMsg').textContent = isSetupNeeded()
-    ? 'Weather needs a free OpenWeather API key added in Vercel (see SETUP.md, section 12).'
-    : loc && !loc.off ? `Now showing: ${loc.name}` : 'Choose the suburb to show the weather for.';
+  $('wxMsg').textContent = loc && !loc.off ? `Now showing: ${loc.name}` : 'Choose the suburb to show the weather for.';
   openSheet('weatherSheet');
   $('wxSearch').focus();
 }

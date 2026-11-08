@@ -1,60 +1,55 @@
-// GET /api/weather?lat=..&lon=..   -> current weather for a place
-// GET /api/weather?q=Liverpool      -> places matching a suburb name or 4-digit postcode (Australia)
+// GET /api/weather?lat=..&lon=..   -> current weather (+ today's high/low) for a place
+// GET /api/weather?q=Liverpool      -> places matching a suburb name or postcode (Australia)
 //
-// Uses OpenWeather's free plan (commercial use allowed, with the credit "Weather data ©
-// OpenWeather"). The API key stays on the server in the OPENWEATHER_API_KEY env var.
+// Uses Open-Meteo (https://open-meteo.com): no API key needed. The free API is for
+// non-commercial use, under 10,000 calls a day, and data is CC BY 4.0, so the app shows
+// "Weather data by Open-Meteo.com". Results are cached here for 10 minutes per place.
 import { route, sendJson } from '../lib/http.js';
 import { requireSession } from '../lib/auth.js';
 
-const BASE = 'https://api.openweathermap.org';
-const CACHE_MS = 10 * 60 * 1000;          // reuse a result for 10 minutes (saves API calls)
+const CACHE_MS = 10 * 60 * 1000;
 const cache = new Map();                   // key -> {at, data}
 
-async function owm(path, params) {
-  const url = new URL(BASE + path);
-  for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
-  url.searchParams.set('appid', process.env.OPENWEATHER_API_KEY);
+// WMO weather codes used by Open-Meteo -> short description
+const WMO = {
+  0: 'Clear', 1: 'Mainly clear', 2: 'Partly cloudy', 3: 'Overcast', 45: 'Fog', 48: 'Fog',
+  51: 'Light drizzle', 53: 'Drizzle', 55: 'Heavy drizzle', 56: 'Freezing drizzle', 57: 'Freezing drizzle',
+  61: 'Light rain', 63: 'Rain', 65: 'Heavy rain', 66: 'Freezing rain', 67: 'Freezing rain',
+  71: 'Light snow', 73: 'Snow', 75: 'Heavy snow', 77: 'Snow grains',
+  80: 'Showers', 81: 'Showers', 82: 'Heavy showers', 85: 'Snow showers', 86: 'Snow showers',
+  95: 'Thunderstorm', 96: 'Thunderstorm, hail', 99: 'Thunderstorm, hail',
+};
+
+async function getJson(url) {
   const res = await fetch(url);
   const data = await res.json().catch(() => ({}));
-  if (res.status === 401) throw Object.assign(new Error('OpenWeather rejected the API key (new keys can take up to 2 hours to start working)'), { status: 502 });
-  if (!res.ok) throw Object.assign(new Error('OpenWeather error: ' + (data.message || res.status)), { status: 502 });
+  if (!res.ok || data.error) throw Object.assign(new Error('Open-Meteo: ' + (data.reason || res.status)), { status: 502 });
   return data;
-}
-
-function demoWeather() {
-  return { demo: true, temp: 24, feels: 25, humidity: 55, id: 801, icon: '02d', description: 'few clouds', name: 'Demo suburb', at: Date.now() };
 }
 
 export default route('GET', async (req, res) => {
   if (!requireSession(req, res)) return;
   const url = new URL(req.url, 'http://x');
   const q = (url.searchParams.get('q') || '').trim();
-  const lat = Number(url.searchParams.get('lat'));
-  const lon = Number(url.searchParams.get('lon'));
 
-  if (!process.env.OPENWEATHER_API_KEY) {
-    if (process.env.POS_DEV === '1') {         // local demo: pretend data so the screen can be tried
-      if (q) return sendJson(res, 200, { places: [{ name: q, state: 'NSW', lat: -33.92, lon: 150.92 }] });
-      return sendJson(res, 200, demoWeather());
-    }
-    return sendJson(res, 501, { setup: true, error: 'Weather is not set up: add OPENWEATHER_API_KEY in Vercel (see SETUP.md)' });
-  }
-
-  // ---- Search for a place ----
+  // ---- Search for a place (suburb name or postcode) ----
   if (q) {
     if (q.length < 2 || q.length > 60) return sendJson(res, 400, { error: 'Type at least 2 letters' });
-    let places = [];
-    if (/^\d{4}$/.test(q)) {                    // Australian postcode
-      const z = await owm('/geo/1.0/zip', { zip: `${q},AU` }).catch(() => null);
-      if (z && z.lat != null) places = [{ name: z.name, state: q, lat: z.lat, lon: z.lon }];
-    } else {
-      const list = await owm('/geo/1.0/direct', { q: `${q},AU`, limit: '5' });
-      places = (Array.isArray(list) ? list : []).map((p) => ({ name: p.name, state: p.state || '', lat: p.lat, lon: p.lon }));
-    }
+    const g = new URL('https://geocoding-api.open-meteo.com/v1/search');
+    g.search = new URLSearchParams({ name: q, count: '8', language: 'en', format: 'json', countryCode: 'AU' }).toString();
+    const data = await getJson(g);
+    const places = (data.results || []).map((p) => ({
+      name: p.name,
+      state: [p.admin1, (p.postcodes || [])[0]].filter(Boolean).join(' '),
+      lat: p.latitude,
+      lon: p.longitude,
+    }));
     return sendJson(res, 200, { places });
   }
 
   // ---- Current weather ----
+  const lat = Number(url.searchParams.get('lat'));
+  const lon = Number(url.searchParams.get('lon'));
   if (!Number.isFinite(lat) || !Number.isFinite(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180) {
     return sendJson(res, 400, { error: 'lat and lon are required' });
   }
@@ -62,15 +57,26 @@ export default route('GET', async (req, res) => {
   const hit = cache.get(key);
   if (hit && Date.now() - hit.at < CACHE_MS) return sendJson(res, 200, hit.data);
 
-  const w = await owm('/data/2.5/weather', { lat: String(lat), lon: String(lon), units: 'metric' });
+  const f = new URL('https://api.open-meteo.com/v1/forecast');
+  f.search = new URLSearchParams({
+    latitude: lat.toFixed(3),
+    longitude: lon.toFixed(3),
+    current: 'temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,is_day',
+    daily: 'temperature_2m_max,temperature_2m_min',
+    timezone: 'auto',
+    forecast_days: '1',
+  }).toString();
+  const w = await getJson(f);
+  const c = w.current || {};
   const data = {
-    temp: Math.round(w.main?.temp),
-    feels: Math.round(w.main?.feels_like),
-    humidity: w.main?.humidity,
-    id: w.weather?.[0]?.id,
-    icon: w.weather?.[0]?.icon || '',
-    description: w.weather?.[0]?.description || '',
-    name: w.name || '',
+    temp: Math.round(c.temperature_2m),
+    feels: Math.round(c.apparent_temperature),
+    humidity: c.relative_humidity_2m,
+    code: c.weather_code,
+    isDay: c.is_day === 1,
+    description: WMO[c.weather_code] || '',
+    hi: Math.round(w.daily?.temperature_2m_max?.[0]),
+    lo: Math.round(w.daily?.temperature_2m_min?.[0]),
     at: Date.now(),
   };
   cache.set(key, { at: Date.now(), data });
