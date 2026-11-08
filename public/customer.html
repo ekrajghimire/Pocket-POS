@@ -44,6 +44,21 @@
     </div>
   </section>
 
+  <!-- Bottom bar: clock, date and weather (same as the POS home screen) -->
+  <footer class="cbar">
+    <div class="cclock">
+      <div id="cTime" class="ctime">--:--</div>
+      <div id="cDate" class="cdate"></div>
+    </div>
+    <div id="cWeather" class="cweather" hidden>
+      <span id="cwIcon" class="cw-icon"></span>
+      <span class="cw-text">
+        <span class="cw-line"><b id="cwTemp"></b> <span id="cwDesc" class="cw-desc"></span></span>
+        <small id="cwPlace"></small>
+      </span>
+    </div>
+  </footer>
+
   <!-- Shown until the display is clicked once (needed to go full screen) -->
   <div id="fsHint" class="fs-hint">Click anywhere for full screen</div>
   <div id="noLink" class="no-link" hidden>Waiting for Pocket POS… open it in this browser and press 🖥 Customer display.</div>

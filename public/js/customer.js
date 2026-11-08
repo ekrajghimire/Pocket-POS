@@ -2,6 +2,8 @@
 // Shows what the POS window broadcasts: the cart while scanning, "Thank you + change" after a
 // sale, and a welcome screen when idle. It only displays; it can't change anything.
 
+import { weatherEmoji } from './weather-icons.js';
+
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const THANKS_MS = 10000;   // how long "Thank you / Change" stays up
@@ -63,6 +65,33 @@ if ('BroadcastChannel' in window) {
   $('noLink').hidden = false;
   $('noLink').textContent = 'This browser cannot link to Pocket POS. Use Chrome or Edge.';
 }
+
+// ---- Bottom bar: clock, date and weather ----
+// Weather comes from what the POS window already saved (same browser), so this window never
+// calls the weather service itself. It updates whenever the POS gets a new reading.
+const readLS = (k) => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } };
+function tickClock() {
+  const now = new Date();
+  $('cTime').textContent = now.toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit' }).replace(/\s/g, ' ');
+  $('cDate').textContent = now.toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+}
+function renderWeather() {
+  const loc = readLS('pos_weather_loc_v1');
+  const w = readLS('pos_weather_last_v1');
+  const show = loc && !loc.off && w && Number.isFinite(w.temp);
+  $('cWeather').hidden = !show;
+  if (!show) return;
+  $('cwIcon').textContent = weatherEmoji(w.code, w.isDay);
+  $('cwTemp').textContent = `${w.temp}°`;
+  $('cwDesc').textContent = w.description || '';
+  $('cwPlace').textContent = Number.isFinite(w.hi) ? `${loc.name} · ${w.hi}°/${w.lo}°` : loc.name;
+}
+tickClock();
+setInterval(tickClock, 10000);
+renderWeather();
+window.addEventListener('storage', (e) => {
+  if (e.key === 'pos_weather_loc_v1' || e.key === 'pos_weather_last_v1') renderWeather();
+});
 
 // Full screen needs one click in this window (browser rule).
 function goFullscreen() {

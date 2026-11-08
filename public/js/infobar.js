@@ -4,6 +4,8 @@
 // saved on this device. It refreshes every 15 minutes; the last reading is kept so something
 // sensible shows while offline.
 
+import { weatherEmoji } from './weather-icons.js';
+
 const LOC_KEY = 'pos_weather_loc_v1';     // {name, lat, lon} or {off: true}
 const LAST_KEY = 'pos_weather_last_v1';   // last weather reading
 const REFRESH_MS = 15 * 60 * 1000;
@@ -20,25 +22,11 @@ function tickClock() {
 }
 
 // ---------- Weather ----------
-/** WMO weather code (used by Open-Meteo) -> emoji */
-function emoji(code, isDay = true) {
-  if (code === 0) return isDay ? '☀️' : '🌙';
-  if (code === 1) return isDay ? '🌤' : '🌙';
-  if (code === 2) return '⛅';
-  if (code === 3) return '☁️';
-  if (code === 45 || code === 48) return '🌫';
-  if (code >= 51 && code <= 57) return '🌦';
-  if (code === 61 || code === 80) return '🌦';
-  if ((code >= 63 && code <= 67) || code === 81 || code === 82) return '🌧';
-  if ((code >= 71 && code <= 77) || code === 85 || code === 86) return '🌨';
-  if (code >= 95) return '⛈';
-  return '🌡';
-}
+const emoji = weatherEmoji;
 
 function render(w, loc) {
   const chip = $('weatherChip');
-  const credit = $('wxCredit');
-  if (loc && loc.off) { chip.hidden = true; credit.hidden = true; return; }
+  if (loc && loc.off) { chip.hidden = true; return; }
   chip.hidden = false;
   $('wxDesc').textContent = '';
   chip.title = '';
@@ -46,14 +34,12 @@ function render(w, loc) {
     $('wxIcon').textContent = '🌤';
     $('wxTemp').textContent = 'Weather';
     $('wxPlace').textContent = 'Tap to set';
-    credit.hidden = true;
     return;
   }
   if (!w) {
     $('wxIcon').textContent = '…';
     $('wxTemp').textContent = '--°';
     $('wxPlace').textContent = loc.name;
-    credit.hidden = false;
     return;
   }
   $('wxIcon').textContent = emoji(w.code, w.isDay);
@@ -61,8 +47,8 @@ function render(w, loc) {
   $('wxDesc').textContent = w.description || '';
   // second line: place + today's high/low
   $('wxPlace').textContent = Number.isFinite(w.hi) ? `${loc.name} · ${w.hi}°/${w.lo}°` : loc.name;
-  chip.title = `${w.description} · feels like ${w.feels}° · humidity ${w.humidity}% · today ${w.hi}° / ${w.lo}°`;
-  credit.hidden = false;
+  // Open-Meteo's licence (CC BY 4.0) asks for credit: it's here and in the weather picker.
+  chip.title = `${w.description} · feels like ${w.feels}° · humidity ${w.humidity}% · today ${w.hi}° / ${w.lo}° — Weather data by Open-Meteo.com`;
 }
 
 let timer = null;
@@ -92,12 +78,20 @@ function placeInfobar() {
   if (WIDE.matches) {
     if (bar.parentElement !== scanner) scanner.appendChild(bar);
     scanner.classList.add('has-info');
-    // flash / edit banners sit just above the bar
-    scanner.style.setProperty('--info-h', bar.offsetHeight + 'px');
+    matchFooterHeight();
   } else {
     if (bar.parentElement !== cart) cart.insertBefore(bar, cart.querySelector('.cart-head'));
     scanner.classList.remove('has-info');
+    bar.style.height = '';
   }
+}
+
+/** On wide screens, make the bar exactly as tall as the Total/Checkout footer on the right. */
+function matchFooterHeight() {
+  if (!WIDE.matches) return;
+  const h = document.querySelector('.cart-foot').offsetHeight + document.querySelector('.home-credit').offsetHeight;
+  document.querySelector('.infobar').style.height = h + 'px';
+  $('scanner').style.setProperty('--info-h', h + 'px');   // flash / edit banners sit just above it
 }
 
 export function startInfobar() {
@@ -105,9 +99,9 @@ export function startInfobar() {
   WIDE.addEventListener('change', placeInfobar);
   // Keep the "space above the bar" right as its height changes (weather loads, window resizes).
   if ('ResizeObserver' in window) {
-    new ResizeObserver(() => {
-      if (WIDE.matches) $('scanner').style.setProperty('--info-h', document.querySelector('.infobar').offsetHeight + 'px');
-    }).observe(document.querySelector('.infobar'));
+    const ro = new ResizeObserver(matchFooterHeight);
+    ro.observe(document.querySelector('.cart-foot'));
+    ro.observe(document.querySelector('.home-credit'));
   }
   tickClock();
   setInterval(tickClock, 1000 * 10);
