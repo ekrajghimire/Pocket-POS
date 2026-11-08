@@ -80,7 +80,35 @@ export async function refreshWeather() {
   } catch { /* offline or service down: keep the last reading */ }
 }
 
+// ---------- Where the bar sits ----------
+// Phone (camera on top, cart below): above the cart.
+// Computer / landscape tablet (side by side): bottom of the left panel, where there's room.
+const WIDE = window.matchMedia('(orientation: landscape) and (min-width: 700px)');
+
+function placeInfobar() {
+  const bar = document.querySelector('.infobar');
+  const scanner = $('scanner');
+  const cart = document.querySelector('.cart');
+  if (WIDE.matches) {
+    if (bar.parentElement !== scanner) scanner.appendChild(bar);
+    scanner.classList.add('has-info');
+    // flash / edit banners sit just above the bar
+    scanner.style.setProperty('--info-h', bar.offsetHeight + 'px');
+  } else {
+    if (bar.parentElement !== cart) cart.insertBefore(bar, cart.querySelector('.cart-head'));
+    scanner.classList.remove('has-info');
+  }
+}
+
 export function startInfobar() {
+  placeInfobar();
+  WIDE.addEventListener('change', placeInfobar);
+  // Keep the "space above the bar" right as its height changes (weather loads, window resizes).
+  if ('ResizeObserver' in window) {
+    new ResizeObserver(() => {
+      if (WIDE.matches) $('scanner').style.setProperty('--info-h', document.querySelector('.infobar').offsetHeight + 'px');
+    }).observe(document.querySelector('.infobar'));
+  }
   tickClock();
   setInterval(tickClock, 1000 * 10);
   refreshWeather();
