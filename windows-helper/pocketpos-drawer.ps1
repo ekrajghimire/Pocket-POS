@@ -131,6 +131,11 @@ while ($true) {
     $method = $parts[0].ToUpper()
     $path   = ($parts[1] -split '\?')[0]
     $origin = [string]$headers['origin']
+    $hostHdr = ([string]$headers['host']).ToLower()
+    if ($hostHdr -ne "127.0.0.1:$Port" -and $hostHdr -ne "localhost:$Port") {
+      Send-Response $stream '403 Forbidden' '{"ok":false,"error":"Bad host"}' ''
+      continue
+    }
     $allowed = $origin -and ($Origins -contains $origin.TrimEnd('/').ToLower())
 
     if ($origin -and -not $allowed) {

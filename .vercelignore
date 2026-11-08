@@ -4,3 +4,4 @@
 !.env.example
 .data
 *service-account*.json
+tests

@@ -8,7 +8,8 @@
   "scripts": {
     "dev": "node scripts/copy-vendor.js && node dev-server.js",
     "build": "node scripts/copy-vendor.js",
-    "hash-password": "node scripts/hash-password.js"
+    "hash-password": "node scripts/hash-password.js",
+    "test": "node --test tests/auth.test.mjs tests/http.test.mjs tests/sync.test.mjs tests/sheets.test.mjs tests/endpoints.test.mjs tests/devserver.test.mjs"
   },
   "dependencies": {
     "@zxing/library": "0.21.3"

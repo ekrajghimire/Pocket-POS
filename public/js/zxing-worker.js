@@ -1,16 +1,16 @@
 // zxing-worker.js — software barcode decoder used when the browser has no native
 // BarcodeDetector (e.g. iPhone Safari). Runs off the main thread so the UI stays smooth.
 
-// Prefer the copy bundled at build time (works offline); fall back to the CDN.
+// Loaded from our own domain only (copied from node_modules at build time by
+// scripts/copy-vendor.js). No CDN: the security policy only allows our own scripts.
 const LOCAL = '/vendor/zxing.min.js';
-const CDN = 'https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js';
 
 let ZX = null;
 let reader = null;
 let loadError = null;
 
 try {
-  try { importScripts(LOCAL); } catch { importScripts(CDN); }
+  importScripts(LOCAL);
   ZX = self.ZXing;
   const F = ZX.BarcodeFormat;
   const hints = new Map();

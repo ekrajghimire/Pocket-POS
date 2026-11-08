@@ -28,7 +28,7 @@ function renderState(st) {
   $('items').innerHTML = st.lines.map((l) => `
     <li class="${l.key === st.highlight ? 'new' : ''}">
       <span class="name">${esc(l.name)}</span>
-      <span class="c">${l.qty}</span>
+      <span class="c">${esc(l.qty)}</span>
       <span class="r">${esc(l.unit)}${l.was ? `<s>${esc(l.was)}</s>` : ''}</span>
       <span class="r strong">${esc(l.total)}</span>
     </li>`).join('');

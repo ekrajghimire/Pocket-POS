@@ -25,7 +25,7 @@
     <form id="loginForm" class="login-card" autocomplete="on">
       <div class="logo">▮▯▮▮▯▮ <span>Pocket POS</span></div>
       <label for="password">Password</label>
-      <input id="password" name="password" type="password" autocomplete="current-password" required enterkeyhint="go">
+      <input id="password" name="password" maxlength="200" type="password" autocomplete="current-password" required enterkeyhint="go">
       <button class="btn btn-primary btn-xl" type="submit">Log in</button>
       <p id="loginError" class="error" role="alert"></p>
       <p id="demoHint" class="hint" hidden>Demo mode: no PASSWORD_HASH set, password is <b>demo</b>.</p>
@@ -65,7 +65,7 @@
 
       <!-- Manual barcode entry (fallback) -->
       <form id="manualForm" class="manual-bar" hidden>
-        <input id="manualInput" inputmode="numeric" autocomplete="off" placeholder="Type barcode" enterkeyhint="done">
+        <input id="manualInput" maxlength="64" inputmode="numeric" autocomplete="off" placeholder="Type barcode" enterkeyhint="done">
         <button class="btn btn-primary" type="submit">Add</button>
       </form>
 
@@ -123,14 +123,14 @@
   <!-- New product (barcode not found) -->
   <form id="newProductSheet" class="sheet" hidden autocomplete="off">
     <h2 id="npTitle">New product</h2>
-    <label>Barcode <input id="npBarcode" inputmode="numeric" required></label>
-    <label>Name <input id="npName" required enterkeyhint="next" autocapitalize="words"></label>
+    <label>Barcode <input id="npBarcode" inputmode="numeric" required maxlength="64"></label>
+    <label>Name <input id="npName" required maxlength="200" enterkeyhint="next" autocapitalize="words"></label>
     <label>Price (AUD) <input id="npPrice" inputmode="decimal" required placeholder="0.00" enterkeyhint="done"></label>
     <div class="row2">
       <label>Cost <input id="npCost" inputmode="decimal" placeholder="optional"></label>
       <label>Stock <input id="npStock" inputmode="numeric" placeholder="optional"></label>
     </div>
-    <label>Category <input id="npCategory" list="categoryList" placeholder="optional"></label>
+    <label>Category <input id="npCategory" maxlength="100" list="categoryList" placeholder="optional"></label>
     <datalist id="categoryList"></datalist>
     <p id="npError" class="error"></p>
     <div class="sheet-actions">
@@ -158,7 +158,7 @@
   <!-- Manual item without barcode -->
   <form id="manualItemSheet" class="sheet" hidden autocomplete="off">
     <h2>Manual item</h2>
-    <label>Description <input id="miName" placeholder="Item" enterkeyhint="next"></label>
+    <label>Description <input id="miName" maxlength="200" placeholder="Item" enterkeyhint="next"></label>
     <label>Price (AUD) <input id="miPrice" inputmode="decimal" required placeholder="0.00"></label>
     <p id="miError" class="error"></p>
     <div class="sheet-actions">
@@ -260,7 +260,7 @@
   <!-- Weather location (saved on this device) -->
   <form id="weatherSheet" class="sheet" hidden autocomplete="off">
     <h2>Weather on the home screen</h2>
-    <label>Suburb or postcode <input id="wxSearch" placeholder="e.g. Liverpool or 2170" enterkeyhint="search"></label>
+    <label>Suburb or postcode <input id="wxSearch" maxlength="60" placeholder="e.g. Liverpool or 2170" enterkeyhint="search"></label>
     <p id="wxMsg" class="hint"></p>
     <ul id="wxResults" class="wx-results"></ul>
     <button class="btn btn-wide" type="button" id="wxUseLocation">📍 Use this device's location</button>

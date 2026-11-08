@@ -13,5 +13,6 @@ if (fs.existsSync(src)) {
   fs.copyFileSync(src, dest);
   console.log(`Copied ZXing -> ${dest}`);
 } else {
-  console.warn('ZXing not installed (run `npm install`). The app will load it from the CDN instead.');
+  console.warn('ZXing not installed (run `npm install`). iPhone scanning needs it: the app loads it only from /vendor.');
+  if (process.env.VERCEL) { console.error('Build stopped: @zxing/library missing.'); process.exit(1); }
 }

@@ -39,8 +39,16 @@ const TYPES = {
 };
 
 const server = http.createServer(async (req, res) => {
+  try { await handle(req, res); }
+  catch (err) {
+    console.error(err);
+    if (!res.headersSent) { res.statusCode = 400; res.end('Bad request'); }
+  }
+});
+
+async function handle(req, res) {
   for (const h of globalHeaders) res.setHeader(h.key, h.value);
-  const url = new URL(req.url, `http://${req.headers.host}`);
+  const url = new URL(req.url, 'http://localhost');
 
   // --- API routes ---
   if (url.pathname.startsWith('/api/')) {
@@ -59,17 +67,18 @@ const server = http.createServer(async (req, res) => {
   }
 
   // --- static files ---
-  let rel = decodeURIComponent(url.pathname);
+  let rel;
+  try { rel = decodeURIComponent(url.pathname); } catch { res.statusCode = 400; return res.end('Bad request'); }
   if (rel.endsWith('/')) rel += 'index.html';
   const file = path.join(PUBLIC, path.normalize(rel));
-  if (!file.startsWith(PUBLIC)) { res.statusCode = 403; return res.end(); }
+  if (file !== PUBLIC && !file.startsWith(PUBLIC + path.sep)) { res.statusCode = 403; return res.end(); }
   fs.readFile(file, (err, data) => {
     if (err) { res.statusCode = 404; return res.end('Not found'); }
     res.setHeader('Content-Type', TYPES[path.extname(file)] || 'application/octet-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.end(data);
   });
-});
+}
 
 server.listen(PORT, () => {
   const sheets = process.env.SHEET_ID && (process.env.GOOGLE_SERVICE_ACCOUNT_JSON || process.env.GOOGLE_PRIVATE_KEY);

@@ -22,7 +22,9 @@ http://localhost:3000 and log in with password `demo` (demo mode, no Google need
 - Offline-tolerant: products are cached on the phone, and sales and new products queue on the phone and
   sync in batches with retries. A badge shows Synced / pending / Offline.
 - Single-password login, 30-day httpOnly + Secure + SameSite=Strict cookie, login rate limiting,
-  CSRF origin check, and a strict Content-Security-Policy.
+  CSRF origin check, strict server-side validation of everything written to the sheet, and a strict
+  Content-Security-Policy with no third-party scripts. Logging out removes product data from the device.
+- Automated tests: `npm test` (46 server tests, Google simulated, no dependencies). See SETUP.md §13.
 
 ## Why scanning is fast
 
@@ -50,7 +52,7 @@ phone still matches when another phone's decoder reports the other form.
 Pocket POS/
 ├── README.md                 ← this file
 ├── SETUP.md                  ← step-by-step: Google Cloud, sheet, env vars, Vercel, domain, phone
-├── package.json              ← scripts: dev, build, hash-password (only dependency: @zxing/library)
+├── package.json              ← scripts: dev, build, hash-password, test (only dependency: @zxing/library)
 ├── vercel.json               ← build/output settings + security headers (CSP etc.)
 ├── .env.example              ← the environment variables you need
 ├── dev-server.js             ← zero-dependency local server (static files + /api, like Vercel)
@@ -60,7 +62,10 @@ Pocket POS/
 │   ├── logout.js             POST /api/logout
 │   ├── session.js            GET  /api/session   logged in? demo mode?
 │   ├── products.js           GET  /api/products  full product list from the sheet
-│   └── sync.js               POST /api/sync      batched new products + sales → sheet
+│   ├── sync.js               POST /api/sync      batched new products + sales → sheet (validated)
+│   └── weather.js            GET  /api/weather   Open-Meteo weather + suburb search (cached)
+│
+├── tests/                    ← `npm test`: auth, sync validation, Sheets (simulated), endpoints, dev server
 │
 ├── lib/                      ← server-only code (secrets never reach the browser)
 │   ├── auth.js               scrypt password check, signed cookies, rate limiting, CSRF check

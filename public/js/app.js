@@ -7,11 +7,11 @@ import { receiptSettings, saveReceiptSettings, printReceipt, rememberLastSale, l
 import { unlockAudio, beepOk, beepUnknown, beepSale } from './feedback.js';
 import {
   cart, settings, saveSettings, addProduct, addManual, updateLine, removeLine, clearCart,
-  itemCount, totals, money, parseMoney, toDollars, roundCash,
+  itemCount, totals, money, parseMoney, toDollars, roundCash, MAX_QTY, MAX_SALE_CENTS,
 } from './cart.js';
 import {
   products, lookup, loadProductsFromCache, refreshProducts, saveProductLocally, categories,
-  enqueue, flush, startSyncLoop, onSyncChange, setAuthLostHandler, api, syncState,
+  enqueue, flush, startSyncLoop, onSyncChange, setAuthLostHandler, api, syncState, clearLocalProducts,
 } from './store.js';
 
 // ---- Tunables -------------------------------------------------------------------------------
@@ -213,6 +213,8 @@ function onScan(code, format) {
 
 /** Called for camera scans, manual entry and keyboard-wedge scanners. */
 function handleCode(code) {
+  code = String(code ?? '').replace(/[\s\u0000-\u001f\u007f]/g, '').slice(0, 64);   // scanners can add spaces/CR
+  if (!code) return;
   if (editMode) {                       // Settings > Edit a product: open the editor, don't sell
     setEditMode(false);
     const p = lookup(code);
@@ -489,14 +491,16 @@ $('npName').addEventListener('keydown', (e) => {
 });
 $('newProductSheet').addEventListener('submit', async (e) => {
   e.preventDefault();
-  const barcode = $('npBarcode').value.trim();
+  const barcode = $('npBarcode').value.replace(/\s/g, '');
   const name = $('npName').value.trim();
+  if (barcode && !/^[\x21-\x7e]{1,64}$/.test(barcode)) { $('npError').textContent = 'Barcode: letters, numbers and symbols only, up to 64'; return $('npBarcode').focus(); }
   const priceCents = parseMoney($('npPrice').value);
   if (!barcode) return ($('npError').textContent = 'Barcode is required');
   if (!name) { $('npError').textContent = 'Name is required'; return $('npName').focus(); }
-  if (priceCents === null) { $('npError').textContent = 'Enter a price'; return $('npPrice').focus(); }
+  if (priceCents === null) { $('npError').textContent = 'Enter a price (up to $99,999.99)'; return $('npPrice').focus(); }
 
   const costCents = parseMoney($('npCost').value);
+  if ($('npCost').value.trim() && costCents === null) { $('npError').textContent = 'Cost must be a number up to $99,999.99'; return $('npCost').focus(); }
   const stockText = $('npStock').value.trim();
   const product = {
     barcode,
@@ -555,7 +559,9 @@ $('editSheet').addEventListener('submit', (e) => {
   const cents = parseMoney($('editPrice').value);
   const changes = {};
   if (!isNaN(qty)) changes.qty = qty;
+  if (qty > MAX_QTY) toast(`Quantity limited to ${MAX_QTY}`, true);
   if (cents !== null) changes.unitCents = cents;   // price for THIS sale only; the product isn't changed
+  else if ($('editPrice').value.trim()) toast('Price not changed: enter a number up to $99,999.99', true);
   updateLine(editingKey, changes);
   closeSheets();
   renderCart();
@@ -571,7 +577,7 @@ $('manualItemBtn').addEventListener('click', () => {
 $('manualItemSheet').addEventListener('submit', (e) => {
   e.preventDefault();
   const cents = parseMoney($('miPrice').value);
-  if (cents === null) { $('miError').textContent = 'Enter a price'; return; }
+  if (cents === null) { $('miError').textContent = 'Enter a price (up to $99,999.99)'; return; }
   addManual($('miName').value.trim(), cents);
   closeSheets();
   renderCart(true);
@@ -582,6 +588,7 @@ let payType = 'Cash';
 $('checkoutBtn').addEventListener('click', () => {
   if (!cart.lines.length) return;
   const t = totals();
+  if (t.total > MAX_SALE_CENTS) { toast('Sale total is over $1,000,000 — check the quantities and prices', true, 4000); return; }
   $('coTotal').textContent = money(t.total);
   $('coGst').textContent = gstText(t);
   $('cashIn').value = '';
@@ -619,7 +626,7 @@ $('cashIn').addEventListener('input', renderChange);
 
 function renderChange() {
   const out = $('changeOut');
-  const received = parseMoney($('cashIn').value);
+  const received = parseMoney($('cashIn').value, MAX_SALE_CENTS);
   if (received === null) { out.textContent = ''; out.classList.remove('short'); return; }
   const diff = received - cashDue();
   out.textContent = diff >= 0 ? `Change ${money(diff)}` : `Short ${money(-diff)}`;
@@ -631,7 +638,7 @@ $('checkoutSheet').addEventListener('submit', (e) => {
   const t = totals();
   let cashReceived = null, change = null;
   if (payType === 'Cash') {
-    const received = parseMoney($('cashIn').value);
+    const received = parseMoney($('cashIn').value, MAX_SALE_CENTS);
     if (received !== null) {
       if (received < cashDue()) { toast('Cash received is less than the total', true); return; }
       cashReceived = toDollars(received);
@@ -880,9 +887,20 @@ $('restartCamBtn').addEventListener('click', async () => {
   if (settings.cameraEnabled) await scanner.restart().catch(() => {});
   startCamera();
 });
+let logoutArmed = null;
 $('logoutBtn').addEventListener('click', async () => {
+  const btn = $('logoutBtn');
+  // Unsynced sales: ask for a second tap. They are kept and sent after the next login.
+  if (syncState.pending && !logoutArmed) {
+    btn.textContent = `${syncState.pending} not synced yet — tap again to log out`;
+    logoutArmed = setTimeout(() => { logoutArmed = null; btn.textContent = 'Log out'; }, 4000);
+    return;
+  }
+  clearTimeout(logoutArmed);
   await fetch('/api/logout', { method: 'POST' }).catch(() => {});
   localStorage.removeItem('pos_authed');
+  localStorage.removeItem('pos_last_sale_v1');          // last receipt
+  await clearLocalProducts().catch(() => {});           // product list incl. cost prices
   closeSheets();
   if (scanner) scanner.stopCamera();
   location.reload();
@@ -894,8 +912,13 @@ function updateProductInfo(n) {
 }
 
 // ---- Sync indicator ---------------------------------------------------------------------------
+let lastRejectedShown = 0;
 onSyncChange((s) => {
   if ($('lastSyncInfo')) updateSyncTimes();
+  if (s.lastRejected && s.rejectedCount !== lastRejectedShown) {
+    lastRejectedShown = s.rejectedCount;
+    toast(`${s.lastRejected} record(s) were refused by the server and kept on this device`, true, 5000);
+  }
   // Settings > Products & sync status line
   $('syncInfo').textContent = s.status === 'synced' ? '✓ Everything is saved to the Google Sheet'
     : s.status === 'offline' ? `Offline · ${s.pending} change${s.pending === 1 ? '' : 's'} waiting to sync`
@@ -928,7 +951,8 @@ function localDateTime(d = new Date()) {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 }
 function makeSaleId(d = new Date()) {
-  const rand = Math.random().toString(36).slice(2, 6).toUpperCase();
+  const ABC = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const rand = Array.from(crypto.getRandomValues(new Uint8Array(6)), (b) => ABC[b % ABC.length]).join('');
   return `S${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}-${rand}`;
 }
 

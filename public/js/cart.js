@@ -10,12 +10,21 @@ export const toDollars = (cents) => Math.round(cents) / 100;
 const fmt = new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' });
 export const money = (cents) => fmt.format(toDollars(cents));
 
+// Limits that keep every sale well inside what the server accepts.
+export const MAX_QTY = 9999;                 // per line
+export const MAX_PRICE_CENTS = 9999999;      // $99,999.99 per item
+export const MAX_SALE_CENTS = 100000000;     // $1,000,000 per sale
+
 /** Parse what the user typed in a price box ("4.5", "$4.50", "4,50") into cents, or null. */
-export function parseMoney(text) {
-  const clean = String(text ?? '').replace(',', '.').replace(/[^0-9.]/g, '');
-  if (!clean || isNaN(Number(clean))) return null;
-  return toCents(clean);
+export function parseMoney(text, maxCents = MAX_PRICE_CENTS) {
+  const raw = String(text ?? '').trim().replace(/^\$\s*/, '');
+  if (!/^[0-9]*[.,]?[0-9]*$/.test(raw)) return null;          // "1e9", "abc5", "-3" are not prices
+  const clean = raw.replace(',', '.');
+  if (!clean || clean === '.' || isNaN(Number(clean))) return null;
+  const cents = toCents(clean);
+  return cents > maxCents ? null : cents;
 }
+const clampQty = (q) => Math.max(0, Math.min(MAX_QTY, Math.floor(q)));
 
 /** Australian cash rounding: 1c and 2c coins are gone, so cash totals round to the nearest 5c. */
 export const roundCash = (cents) => Math.round(cents / 5) * 5;
@@ -39,7 +48,7 @@ export function addProduct(product) {
   const key = product.barcode;
   const existing = cart.lines.find((l) => l.key === key);
   if (existing) {
-    existing.qty += 1;
+    existing.qty = clampQty(existing.qty + 1);
     // Move it to the top so the latest scan is always visible.
     cart.lines = [existing, ...cart.lines.filter((l) => l !== existing)];
   } else {
@@ -61,6 +70,7 @@ export function updateLine(key, changes) {
   const line = cart.lines.find((l) => l.key === key);
   if (!line) return;
   Object.assign(line, changes);
+  line.qty = clampQty(line.qty);
   if (line.qty <= 0) removeLine(key);
   persist();
 }

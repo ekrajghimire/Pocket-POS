@@ -48,9 +48,11 @@ export default route('GET', async (req, res) => {
   }
 
   // ---- Current weather ----
-  const lat = Number(url.searchParams.get('lat'));
-  const lon = Number(url.searchParams.get('lon'));
-  if (!Number.isFinite(lat) || !Number.isFinite(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180) {
+  const latText = url.searchParams.get('lat') || '';
+  const lonText = url.searchParams.get('lon') || '';
+  const lat = Number(latText);
+  const lon = Number(lonText);
+  if (!latText.trim() || !lonText.trim() || !Number.isFinite(lat) || !Number.isFinite(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180) {
     return sendJson(res, 400, { error: 'lat and lon are required' });
   }
   const key = `${lat.toFixed(2)},${lon.toFixed(2)}`;

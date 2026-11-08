@@ -183,8 +183,10 @@ export async function flush(force = false) {
       products: items.filter((i) => i.type === 'product').map((i) => i.payload),
       sales: items.filter((i) => i.type === 'sale').map((i) => i.payload),
     };
-    await api('/api/sync', { method: 'POST', body });
+    const reply = await api('/api/sync', { method: 'POST', body });
     markSynced();
+    // Records the server refused (failed validation) are kept on this device, never silently lost.
+    if (reply.rejected && reply.rejected.length) keepRejected(items, reply.rejected);
 
     // Success: remove what we sent.
     await tx('outbox', 'readwrite', (s) => { for (const i of items) s.delete(i.id); });
@@ -200,6 +202,28 @@ export async function flush(force = false) {
   } finally {
     flushing = false;
   }
+}
+
+const REJECTED_KEY = 'pos_rejected_v1';
+function keepRejected(items, rejected) {
+  const matches = items.filter((i) => rejected.some((r) =>
+    (r.kind === 'sale' && i.type === 'sale' && i.payload.sale_id === r.id) ||
+    (r.kind === 'product' && i.type === 'product' && i.payload.barcode === r.id)));
+  let list = [];
+  try { list = JSON.parse(localStorage.getItem(REJECTED_KEY)) || []; } catch { /* start fresh */ }
+  for (const m of matches) list.push({ ...m, reason: rejected.find((r) => r.id === (m.payload.sale_id || m.payload.barcode))?.reason });
+  try { localStorage.setItem(REJECTED_KEY, JSON.stringify(list.slice(-200))); } catch { /* storage full */ }
+  emit({ rejectedCount: list.length, lastRejected: rejected.length });
+}
+export function rejectedRecords() { try { return JSON.parse(localStorage.getItem(REJECTED_KEY)) || []; } catch { return []; } }
+
+/** Log out: remove the downloaded product list (it includes cost prices) from this device.
+ *  Unsynced sales stay in the queue and are sent after the next login. */
+export async function clearLocalProducts() {
+  products.clear();
+  await tx('products', 'readwrite', (s) => s.clear());
+  await tx('meta', 'readwrite', (s) => s.delete('productsFetchedAt'));
+  try { localStorage.removeItem(PRODUCTS_AT_KEY); } catch { /* ignore */ }
 }
 
 export function startSyncLoop() {

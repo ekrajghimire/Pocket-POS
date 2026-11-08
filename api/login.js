@@ -9,12 +9,13 @@ export default route('POST', async (req, res) => {
     return sendJson(res, 429, { error: `Too many attempts. Try again in ${Math.ceil(wait / 60)} min.` }, { 'Retry-After': String(wait) });
   }
 
+  // Count the attempt BEFORE checking, so many parallel guesses can't all slip past the limit.
+  recordLoginFailure(ip);
   const body = await readJson(req).catch(() => ({}));
-  const password = typeof body.password === 'string' ? body.password : '';
+  const password = typeof body?.password === 'string' ? body.password : '';
   const ok = password.length > 0 && password.length <= 200 && verifyPassword(password);
 
   if (!ok) {
-    recordLoginFailure(ip);
     await new Promise((r) => setTimeout(r, 600)); // slow down guessing
     return sendJson(res, 401, { error: 'Wrong password' });
   }

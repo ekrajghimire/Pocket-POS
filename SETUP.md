@@ -212,12 +212,34 @@ The shop name comes from ☰ → Receipt settings. The display only shows inform
 
 ## 12. Weather on the home screen
 
-The home screen shows the time, weekday, date and live weather from **Open-Meteo**. No account or key is needed. Its free API is for non-commercial use, and the app shows the required credit *"Weather data by Open-Meteo.com"* at the bottom of the screen.
+The home screen shows the time, weekday, date and live weather from **Open-Meteo**. No account or key is needed. Its free API is for non-commercial use. The required credit *"Weather data by Open-Meteo.com"* is shown in the weather location sheet and in the weather button's tooltip.
 
 1. In Pocket POS, tap the **weather button** next to the clock, or ☰ → **Weather location**.
 2. Type your suburb or postcode (e.g. `Liverpool` or `2170`) and tap your suburb. You can also use **📍 Use this device's location**.
 
 The button shows the conditions, temperature, and today's high/low. Each device remembers its own suburb. Weather updates every 15 minutes and the last reading stays on screen while offline. **Hide weather** removes it.
+
+## 13. Security checklist
+
+What the app already does for you:
+
+- Your Google key, `PASSWORD_HASH` and `SESSION_SECRET` live only in Vercel's environment variables. The browser never sees them, and errors shown on screen never include them.
+- Login: scrypt-hashed password, 30-day `HttpOnly` + `Secure` + `SameSite=Strict` cookie, 5 wrong tries per IP (30 in total) per 15 minutes, and cross-site requests are refused.
+- Everything sent to the sheet is checked on the server: formats, lengths, prices up to $1,000,000, quantities, and that each sale adds up. Text that looks like a spreadsheet formula (`=…`) can't reach a cell that Sheets evaluates.
+- The app only runs its own code: a strict Content-Security-Policy and no outside scripts. Product names, shop details and weather text are always shown as plain text.
+- **Log out** removes the product list (which includes cost prices) and the last receipt from that device. Sales that haven't synced yet are kept and sent after the next login; the button asks for a second tap if there are any.
+- If the server ever refuses a record, the app keeps a copy on the device and tells you.
+- The Drawer Helper only listens on `127.0.0.1` (this PC), only answers your Pocket POS web address, and refuses requests with any other host name.
+
+What you should do:
+
+1. Use a password of at least 12 characters that you don't use anywhere else.
+2. If a service-account key, `PASSWORD_HASH` or `SESSION_SECRET` was ever shown in a screenshot, chat or email, replace it: delete the old key in Google Cloud (**IAM & Admin → Service Accounts → your account → Keys**), make a new one, and update the variables in Vercel. Changing `SESSION_SECRET` or `PASSWORD_HASH` logs out every device.
+3. Share the Google Sheet only with the service account and the people who need it.
+4. Lost a phone? Change `SESSION_SECRET` in Vercel and redeploy, which logs out every device.
+5. Optional: in Vercel → **Firewall**, add a rate-limit rule for `/api/login` for extra protection.
+
+To run the automated tests on your Mac: `npm test` (no setup needed; Google is simulated).
 
 ## Troubleshooting
 
