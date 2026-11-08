@@ -210,6 +210,17 @@ A second monitor plugged into the POS computer can show the customer each item, 
 
 The shop name comes from ☰ → Receipt settings. The display only shows information and can't change anything. It must be open in the same browser on the same computer as the POS. If it's closed by accident, press 🖥 again; it picks up the current sale straight away. If the pop-up is blocked, click the blocked-pop-up icon in the address bar → **Always allow**.
 
+## 12. Live weather on the home screen (optional)
+
+The home screen shows the time, weekday and date out of the box. Live weather uses **OpenWeather**: its free plan allows business use, needs a free API key, and asks for the credit *"Weather data © OpenWeather"*, which the app shows at the bottom of the screen.
+
+1. Sign up at **openweathermap.org** (free) and confirm your email.
+2. Click your name (top right) → **My API keys** and copy the key. A default key is created for you.
+3. In **Vercel → pocket-pos → Settings → Environment Variables**, add `OPENWEATHER_API_KEY` with that key, ticking **Production**. Then **Redeploy**.
+4. In Pocket POS, tap the **weather button** next to the clock, or ☰ → **Weather location**. Type your suburb or postcode (e.g. `Liverpool` or `2170`) and tap your suburb. You can also use **📍 Use this device's location**.
+
+Each device remembers its own suburb. Weather updates every 15 minutes, and the last reading stays on screen while offline. **Hide weather** removes it. A brand-new OpenWeather key can take **up to 2 hours** to start working; until then the button says the key was rejected.
+
 ## Troubleshooting
 
 | Problem | Fix |

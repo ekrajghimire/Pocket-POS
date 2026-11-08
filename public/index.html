@@ -84,6 +84,20 @@
 
     <!-- Bottom half: live cart -->
     <section class="cart">
+      <!-- Clock, date and weather -->
+      <div class="infobar">
+        <div class="clock">
+          <div id="clockTime" class="clock-time">--:--</div>
+          <div id="clockDate" class="clock-date"></div>
+        </div>
+        <button id="weatherChip" class="weather-chip" type="button" aria-label="Weather">
+          <span id="wxIcon" class="wx-icon">🌤</span>
+          <span class="wx-text">
+            <span class="wx-line"><b id="wxTemp">Weather</b> <span id="wxDesc" class="wx-desc"></span></span>
+            <small id="wxPlace">Tap to set</small>
+          </span>
+        </button>
+      </div>
       <div class="cart-head">
         <span id="cartCount">0 items</span>
         <div class="spacer"></div>
@@ -99,6 +113,7 @@
         </div>
         <button id="checkoutBtn" class="btn btn-primary btn-xl" type="button" disabled>Checkout</button>
       </div>
+      <div class="home-credit">Developed by Manish Ghimire<span id="wxCredit" hidden> · Weather data © OpenWeather</span></div>
     </section>
   </div>
 
@@ -196,6 +211,7 @@
         <button type="button" data-accent="green"><span class="swatch green"></span> Green</button>
         <button type="button" data-accent="blue"><span class="swatch blue"></span> Blue</button>
       </div>
+      <button class="btn btn-wide" type="button" id="weatherSetBtn">🌤 Weather location</button>
     </section>
 
     <!-- 2. Scanning -->
@@ -224,7 +240,7 @@
         <dt>Products updated</dt><dd id="productsAtInfo">—</dd>
       </dl>
       <button class="btn btn-wide" type="button" id="editProductModeBtn">✎ Edit a product</button>
-      <button class="btn btn-wide" type="button" id="refreshBtn">↻ Refresh products from database</button>
+      <button class="btn btn-wide" type="button" id="refreshBtn">↻ Refresh products from sheet</button>
       <button class="btn btn-wide" type="button" id="syncNowBtn">⇅ Sync now</button>
       <label class="toggle"><input type="checkbox" id="gstOn"> Show 10% GST</label>
       <label class="toggle"><input type="checkbox" id="gstIncl"> Prices include GST</label>
@@ -238,8 +254,23 @@
     </section>
 
     <div class="sheet-actions"><button class="btn btn-primary btn-xl" type="button" data-close>Close</button></div>
-    <p class="credit">Pocket POS · Developed by Manish Ghimire</p>
+    <p class="credit">Hoxton Park Grocery Store POS · Developed by Manish Ghimire</p>
   </div>
+
+  <!-- Weather location (saved on this device) -->
+  <form id="weatherSheet" class="sheet" hidden autocomplete="off">
+    <h2>Weather on the home screen</h2>
+    <label>Suburb or postcode <input id="wxSearch" placeholder="e.g. Liverpool or 2170" enterkeyhint="search"></label>
+    <p id="wxMsg" class="hint"></p>
+    <ul id="wxResults" class="wx-results"></ul>
+    <button class="btn btn-wide" type="button" id="wxUseLocation">📍 Use this device's location</button>
+    <button class="btn btn-wide" type="button" id="wxOff">Hide weather</button>
+    <p class="hint">Updates every 15 minutes. Weather data © OpenWeather.</p>
+    <div class="sheet-actions">
+      <button class="btn" type="button" data-close>Close</button>
+      <button class="btn btn-primary btn-xl" type="submit">Search</button>
+    </div>
+  </form>
 
   <!-- Receipt settings (saved on this device) -->
   <form id="receiptSheet" class="sheet" hidden autocomplete="off">

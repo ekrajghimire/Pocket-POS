@@ -2,6 +2,7 @@
 
 import { Scanner } from './scanner.js';
 import { setStateProvider, publishCart, publishSale, openCustomerDisplay } from './display.js';
+import { startInfobar, searchPlaces, setWeatherLocation, useDeviceLocation, weatherLocation, isSetupNeeded } from './infobar.js';
 import { receiptSettings, saveReceiptSettings, printReceipt, rememberLastSale, lastSale, sampleSale, openDrawer, checkHelper } from './receipt.js';
 import { unlockAudio, beepOk, beepUnknown, beepSale } from './feedback.js';
 import {
@@ -106,6 +107,7 @@ async function startApp() {
   $('app').hidden = false;
   renderCart();
   updateDrawerButton();
+  startInfobar();
   if (demoMode) toast('Demo mode: data is stored on the dev server, not Google Sheets', false, 3500);
 
   // 1) Products from IndexedDB: instant, works offline.
@@ -421,7 +423,7 @@ $('clearBtn').addEventListener('click', () => {
 // =============================================================================================
 // Bottom sheets
 // =============================================================================================
-const SHEETS = ['newProductSheet', 'editSheet', 'manualItemSheet', 'checkoutSheet', 'settingsSheet', 'receiptSheet'];
+const SHEETS = ['newProductSheet', 'editSheet', 'manualItemSheet', 'checkoutSheet', 'settingsSheet', 'receiptSheet', 'weatherSheet'];
 const anySheetOpen = () => SHEETS.some((id) => !$(id).hidden);
 
 function openSheet(id) {
@@ -680,6 +682,46 @@ $('checkoutSheet').addEventListener('submit', (e) => {
 });
 
 // ---- Settings -------------------------------------------------------------------------------
+// ---- Weather location -----------------------------------------------------------------------
+function openWeatherSheet() {
+  $('weatherSheet').reset();
+  $('wxResults').innerHTML = '';
+  const loc = weatherLocation();
+  $('wxMsg').textContent = isSetupNeeded()
+    ? 'Weather needs a free OpenWeather API key added in Vercel (see SETUP.md, section 12).'
+    : loc && !loc.off ? `Now showing: ${loc.name}` : 'Choose the suburb to show the weather for.';
+  openSheet('weatherSheet');
+  $('wxSearch').focus();
+}
+$('weatherChip').addEventListener('click', openWeatherSheet);
+$('weatherSetBtn').addEventListener('click', openWeatherSheet);
+$('weatherSheet').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const q = $('wxSearch').value.trim();
+  if (q.length < 2) { $('wxMsg').textContent = 'Type at least 2 letters, or a 4-digit postcode.'; return; }
+  $('wxMsg').textContent = 'Searching…';
+  try {
+    const places = await searchPlaces(q);
+    $('wxMsg').textContent = places.length ? 'Tap your suburb:' : 'No places found. Try another spelling or the postcode.';
+    $('wxResults').innerHTML = places.map((p, i) =>
+      `<li><button type="button" data-i="${i}">${esc(p.name)} <small>${esc(p.state || '')}</small></button></li>`).join('');
+    $('wxResults').onclick = (ev) => {
+      const b = ev.target.closest('button[data-i]');
+      if (!b) return;
+      const p = places[Number(b.dataset.i)];
+      setWeatherLocation({ name: p.name, lat: +(+p.lat).toFixed(3), lon: +(+p.lon).toFixed(3) });
+      closeSheets();
+      toast(`Weather: ${p.name}`);
+    };
+  } catch (err) { $('wxMsg').textContent = err.message; }
+});
+$('wxUseLocation').addEventListener('click', async () => {
+  $('wxMsg').textContent = 'Getting location…';
+  try { const loc = await useDeviceLocation(); closeSheets(); toast(`Weather: ${loc.name}`); }
+  catch (err) { $('wxMsg').textContent = err.message; }
+});
+$('wxOff').addEventListener('click', () => { setWeatherLocation({ off: true }); closeSheets(); toast('Weather hidden. Turn it back on in ☰ → Weather location'); });
+
 // ---- Theme (Auto / Light / Dark), saved on this device ---------------------------------------
 function showThemeChoice() {
   if (!window.PocketTheme) return;
