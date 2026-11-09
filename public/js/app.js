@@ -826,14 +826,14 @@ $('syncNowBtn').addEventListener('click', async () => {
 });
 
 // ---- "Last synced" / "Products updated" times ------------------------------------------------
-/** 1794012345678 -> { when: "Today 10:42 pm", ago: "5 min ago" } */
+/** 1794012345678 -> { when: "Today 10:42 PM", ago: "5 min ago" } */
 function whenText(ts) {
   if (!ts) return { when: 'Never', ago: '' };
   const d = new Date(ts);
   const now = new Date();
   const dayStart = (x) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
   const days = Math.round((dayStart(now) - dayStart(d)) / 86400000);
-  const time = d.toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit' }).replace(/\s/g, ' ');
+  const time = d.toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit' }).replace(/\s/g, ' ').toUpperCase();
   const day = days === 0 ? 'Today' : days === 1 ? 'Yesterday'
     : d.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' });
   const mins = Math.floor((now - d) / 60000);

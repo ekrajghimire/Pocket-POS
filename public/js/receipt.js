@@ -30,7 +30,7 @@ const $$ = (dollars) => fmt.format(Number(dollars) || 0);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const row = (left, right, cls = '') => `<div class="r-row ${cls}"><span>${left}</span><span>${right}</span></div>`;
 
-/** "2026-11-07 15:20:31" -> { date: "2026-11-07", time: "3:20:31 pm" } (same style as the old receipts) */
+/** "2026-11-07 15:20:31" -> { date: "2026-11-07", time: "3:20:31 PM" } (same style as the old receipts) */
 function splitDate(text) {
   const d = new Date(String(text).replace(' ', 'T'));
   if (isNaN(d)) return { date: esc(text), time: '' };
@@ -38,7 +38,7 @@ function splitDate(text) {
   const h = d.getHours() % 12 || 12;
   return {
     date: `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`,
-    time: `${h}:${pad(d.getMinutes())}:${pad(d.getSeconds())} ${d.getHours() < 12 ? 'am' : 'pm'}`,
+    time: `${h}:${pad(d.getMinutes())}:${pad(d.getSeconds())} ${d.getHours() < 12 ? 'AM' : 'PM'}`,
   };
 }
 const num = (v) => (Number(v) || 0).toFixed(2);   // 2.5 -> "2.50" (no $ inside the table)
@@ -182,7 +182,7 @@ export function printDrawerSlip(reason = 'NO SALE', sale = null) {
   const el = document.getElementById('receipt');
   const paper = receiptSettings.paper;
   el.className = 'receipt slip ' + (paper === '58' ? 'w58' : paper === 'a4' ? 'a4' : 'w80');
-  const now = new Date().toLocaleString('en-AU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+  const now = new Date().toLocaleString('en-AU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: 'numeric', minute: '2-digit' }).toUpperCase();
   el.innerHTML = `<div class="r-title">${esc(reason)}</div>`
     + `<div class="r-center">${esc(now)}</div>`
     + (sale ? row(`No. ${esc(sale.sale_id)}`, '') + row('Total', $$(sale.total))

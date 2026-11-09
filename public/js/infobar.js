@@ -17,7 +17,7 @@ const write = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } ca
 // ---------- Clock ----------
 function tickClock() {
   const now = new Date();
-  $('clockTime').textContent = now.toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit' }).replace(/\s/g, ' ');
+  $('clockTime').textContent = now.toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit' }).replace(/\s/g, ' ').toUpperCase();
   $('clockDate').textContent = now.toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 }
 

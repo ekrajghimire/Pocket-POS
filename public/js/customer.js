@@ -117,7 +117,7 @@ if ('BroadcastChannel' in window) {
 const readLS = (k) => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } };
 function tickClock() {
   const now = new Date();
-  $('cTime').textContent = now.toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit' }).replace(/\s/g, ' ');
+  $('cTime').textContent = now.toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit' }).replace(/\s/g, ' ').toUpperCase();
   $('cDate').textContent = now.toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 }
 function renderWeather() {
